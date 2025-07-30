@@ -1,0 +1,24 @@
+Package: mlxModelFinder
+Title: Structural Model Selection in Monolix Using Optimization Algorithms
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Frano", "Mihaljevic", email = "frano.mihaljevic@simulations-plus.com", role = c("aut", "cre")),
+	person("Matthias", "Pierre", email = "matthias.pierre@simulations-plus.com", role = c("aut")),
+	person("Julie", "Bertrand", email = "julie.bertrand@inserm.fr", role = c("ths")))
+Description: Provides an interface for automated structural model selection using Monolix. 
+    It supports a range of optimization strategies including Ant Colony Optimization (ACO), decision trees, exhaustive search, and tournament-based approaches. 
+    Users can define a model search space and leverage these algorithms to explore and identify optimal pharmacokinetic models.
+License: BSD_2_clause + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Depends: R (>= 4.2.0)
+Imports:
+    lixoftConnectors,
+    ggplot2,
+	cli,
+	gridExtra,
+	data.tree,
+	Rsmlx
+Suggests:
+    testthat
