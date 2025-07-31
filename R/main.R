@@ -72,16 +72,17 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
 
   # --- Default Settings ---
   default_settings <- list(
-    N = 6,
+    N = ifelse(is.null(settings$iiv) || !settings$iiv, 10, 20),
     iiv = FALSE,
     error = FALSE,
     seed = 123456,
     previous_runs = NULL,
     output = NULL,
     convergence_threshold = 0.75,
-    initial_iiv_forced_iter = 3,
-    rho = 0.4,
-    save_mode = "best"
+    initial_iiv_forced_iter = 5,
+    rho = ifelse(is.null(settings$iiv) || !settings$iiv, 0.4, 0.6),
+    save_mode = "best",
+    keys = c("distribution", "absorption_delay", "distribution", "elimination")
   )
 
   # Overwrite defaults with user-provided settings
