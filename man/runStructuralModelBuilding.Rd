@@ -41,7 +41,7 @@ If a filter is not specified, all its possible options will be included in the s
 \item error: Boolean, whether to explore the residual error model.
 \item seed: A random seed for reproducibility.
 \item previous_runs: An optional data frame of previous model runs to learn from.
-\item output: Optional file path to save results incrementally (with the csv extension).
+\item output: Optional file path to save results incrementally (with the csv extension). If not provided, the results are not saved incrementally.
 \item convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75).
 \item initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3).
 \item rho (ACO/Tournament): Evaporation (learning) rate.
@@ -52,6 +52,7 @@ Must be one of:
 \item \code{"best"}: Save only the best-performing model based.
 \item \code{"all"}: Save all model runs.
 }
+Models are saved in the autoBuild subdirectory of the result folder of the project.
 }}
 
 \item{metric_func}{(optional) A function that returns the performance metric for the last run model (based on lixoftConnectors). By default, BICc if no IIV, BICc + count(RSE>50\%) * number_of_observations, if IIV.}
@@ -63,4 +64,56 @@ A data frame containing all models tested and their performance metrics.
 }
 \description{
 Run Model Selection
+}
+\examples{
+\dontrun{
+# Example 1: Default search with oral clearance models and additional filters
+runStructuralModelBuilding(
+  project = file.path(getDemoPath(), "1.creating_and_using_models",
+                      "1.1.libraries_of_models", "theophylline_project.mlxtran"),
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  filters = list(delay = c("noDelay", "lagTime"), elimination = "linear"),
+  settings = list(iiv = FALSE, error = TRUE, save_mode = "best")
+)
+
+# Example 2: Oral bolus rate-parametrized models on an IV/Oral project
+runStructuralModelBuilding(
+  project = file.path(getDemoPath(), "6.PK_models", "6.2.multiple_routes",
+                      "ivOral1_project.mlxtran"),
+  library = "pk",
+  requiredFilters = list(administration = "oralBolus", parametrization = "rate"),
+  filters = list(delay = c("noDelay", "lagTime"), elimination = "linear"),
+  settings = list(iiv = FALSE, error = FALSE)
+)
+
+# Example 3: Bolus route with IIV and residual error estimation
+runStructuralModelBuilding(
+  project = file.path(getDemoPath(), "6.PK_models", "6.1.single_route",
+                      "bolusMixed_project.mlxtran"),
+  library = "pk",
+  requiredFilters = list(administration = "bolus", parametrization = "rate"),
+  settings = list(iiv = TRUE, error = TRUE, output = "list_of_runs.csv")
+)
+
+# Example 4: Exhaustive search over oral clearance models
+runStructuralModelBuilding(
+  project = file.path(getDemoPath(), "1.creating_and_using_models",
+                      "1.1.libraries_of_models", "theophylline_project.mlxtran"),
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  algorithm = "exhaustive_search",
+  settings = list(output = "list_of_runs.csv")
+)
+
+# Example 5: Decision tree search strategy
+runStructuralModelBuilding(
+  project = file.path(getDemoPath(), "1.creating_and_using_models",
+                      "1.1.libraries_of_models", "theophylline_project.mlxtran"),
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  algorithm = "decision_tree"
+)
+}
+
 }
