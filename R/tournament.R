@@ -211,5 +211,8 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
   final_results <- do.call(rbind, list_of_runs)
   rownames(final_results) <- NULL
 
-  return(final_results[order(final_results$metric), ])
+  res <- final_results[order(final_results$metric), ]
+  res <- res[, colSums(!is.na(res)) > 0]
+
+  return(res)
 }
