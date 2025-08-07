@@ -110,6 +110,24 @@ validate_settings <- function(settings) {
     stop("Error: 'settings$initial_iiv_forced_iter' must be a single non-negative number.")
   }
 
+  return(TRUE)
+}
+
+validate_no_argument_function <- function(func, arg_name) {
+  if (!is.function(func)) {
+    stop(paste0("Error: The argument '", arg_name, "' must be a function."))
+  }
+  if (length(formals(func)) != 0) {
+    if (arg_name == "metric_func") {
+      stop("Error: The 'metric_func' function must take no arguments. It must retrieve the results using lixoftConnectors functions.")
+    } else {
+      stop(paste0("Error: The '", arg_name, "' function must take no arguments."))
+    }
+  }
+  return(TRUE)
+}
+
+validate_obsidtouse <- function(settings) {
   obs_ids <- lixoftConnectors::getData()$observationNames
   if (length(obs_ids) > 1) {
     if (is.null(settings$obsIDToUse)) {
@@ -129,19 +147,5 @@ validate_settings <- function(settings) {
     }
   }
 
-  return(TRUE)
-}
-
-validate_no_argument_function <- function(func, arg_name) {
-  if (!is.function(func)) {
-    stop(paste0("Error: The argument '", arg_name, "' must be a function."))
-  }
-  if (length(formals(func)) != 0) {
-    if (arg_name == "metric_func") {
-      stop("Error: The 'metric_func' function must take no arguments. It must retrieve the results using lixoftConnectors functions.")
-    } else {
-      stop(paste0("Error: The '", arg_name, "' function must take no arguments."))
-    }
-  }
   return(TRUE)
 }

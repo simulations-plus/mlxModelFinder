@@ -179,6 +179,8 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
   # Load and clean project
   lixoftConnectors::loadProject(project)
 
+  validate_obsidtouse(settings)
+
   init_var <- lixoftConnectors::getIndividualParameterModel()$variability
   init_var <- lapply(init_var, function(x) {
     x[] <- TRUE
