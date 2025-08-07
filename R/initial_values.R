@@ -190,7 +190,7 @@ pkpopini <- function(project, new.project = NULL, new.dir = NULL) {
   new.project <- file.path(new.dir, new.project)
 
   g <- lixoftConnectors::getContinuousObservationModel()
-  eval(parse(text=paste0('lixoftConnectors::setErrorModel(',names(g$errorModel),'= "combined2")')))
+  # eval(parse(text=paste0('lixoftConnectors::setErrorModel(',names(g$errorModel),'= "combined2")')))
 
   r <- lixoftConnectors::getInterpretedData()
   pini <- compute.ini(r, data$administration, parameter)
