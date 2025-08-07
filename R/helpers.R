@@ -76,8 +76,13 @@ renameParams <- function(input, library) {
   return(input)
 }
 
-runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL) {
+runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL, obsIDToUse = NULL) {
   lixoftConnectors::setStructuralModel(model)
+
+  if (!is.null(obsIDToUse)) {
+    model_output <- lixoftConnectors::getMapping()$mapping[[1]]$modelOutput
+    lixoftConnectors::setMapping(list(list(obsId = obsIDToUse, modelOutput = model_output)))
+  }
 
   project_path <- gsub("\\\\", "/", tempfile(pattern = "project", fileext = ".mlxtran"))
   lixoftConnectors::saveProject(project_path)

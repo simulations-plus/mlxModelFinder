@@ -45,6 +45,7 @@ If a filter is not specified, all its possible options will be included in the s
 \item convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75).
 \item initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3).
 \item rho (ACO/Tournament): Evaporation (learning) rate.
+\item obsIDToUse: observation ID to use (required if multiple observation IDs).
 \item save_mode: Character string indicating how model runs should be saved during training.
 Must be one of:
 \itemize{

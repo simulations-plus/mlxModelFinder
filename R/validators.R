@@ -39,12 +39,12 @@ validate_filters <- function(filters, requiredFilters) {
   if (!is.list(filters) || !all(names(filters) %in% allowed_names)) {
     stop("Error: 'filters' must be a list with keys from: 'delay', 'absorption', 'distribution', 'elimination', 'bioavailability'.")
   }
-  
+
   delay_values <- c("noDelay", "lagTime", "transitCompartments")
   absorption_values <- c("zeroOrder", "firstOrder", "sigmoid")
   distribution_values <- c("1compartment", "2compartments", "3compartments")
   elimination_values <- c("linear", "MichaelisMenten", "combined")
-  
+
   if (!is.null(filters$delay) && !all(filters$delay %in% delay_values)) {
     stop("Error: 'delay' must contain only values 'noDelay', 'lagTime', or 'transitCompartments'.")
   }
@@ -57,7 +57,7 @@ validate_filters <- function(filters, requiredFilters) {
   if (!is.null(filters$elimination) && !all(filters$elimination %in% elimination_values)) {
     stop("Error: 'elimination' must contain only values 'linear', 'MichaelisMenten', or 'combined'.")
   }
-  
+
   if (!is.null(filters$bioavailability)) {
     if (requiredFilters$administration != "oralBolus") {
       stop("Error: 'bioavailability' filter is only applicable when administration is 'oralBolus'.")
@@ -66,7 +66,7 @@ validate_filters <- function(filters, requiredFilters) {
       stop("Error: 'bioavailability' must contain only string values 'true' or 'false'.")
     }
   }
-  
+
   return(TRUE)
 }
 validate_algorithm <- function(algorithm) {
@@ -81,7 +81,7 @@ validate_settings <- function(settings) {
   if (!is.list(settings)) {
     stop("Error: 'settings' must be a list.")
   }
-  
+
   if (!is.null(settings$N) && (!is.numeric(settings$N) || length(settings$N) != 1 || settings$N <= 0)) {
     stop("Error: 'settings$N' must be a single positive number.")
   }
@@ -109,7 +109,26 @@ validate_settings <- function(settings) {
   if (!is.null(settings$initial_iiv_forced_iter) && (!is.numeric(settings$initial_iiv_forced_iter) || length(settings$initial_iiv_forced_iter) != 1 || settings$initial_iiv_forced_iter < 0)) {
     stop("Error: 'settings$initial_iiv_forced_iter' must be a single non-negative number.")
   }
-  
+
+  obs_ids <- lixoftConnectors::getData()$observationNames
+  if (length(obs_ids) > 1) {
+    if (is.null(settings$obsIDToUse)) {
+      stop("settings$obsIDToUse must be provided when multiple observation types are present.")
+    }
+
+    if (!is.character(settings$obsIDToUse) || length(settings$obsIDToUse) != 1) {
+      stop("settings$obsIDToUse must be a single string.")
+    }
+
+    if (!(settings$obsIDToUse %in% obs_ids)) {
+      stop(sprintf(
+        "Invalid obsIDToUse: '%s'. It must match one of the available observation types: %s",
+        settings$obsIDToUse,
+        paste(shQuote(obs_ids), collapse = ", ")
+      ))
+    }
+  }
+
   return(TRUE)
 }
 

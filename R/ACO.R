@@ -100,7 +100,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       iiv_params <- if (settings$iiv) as.data.frame(models$iiv)[i, ] else NULL
       error_model <- if (settings$error) as.data.frame(models$error)[i, ] else NULL
 
-      runModel(model, iiv = iiv_params, error = error_model)
+      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse)
 
       models_tested <- models_tested + 1
 

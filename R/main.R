@@ -23,6 +23,7 @@
 #'   - convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75).
 #'   - initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3).
 #'   - rho (ACO/Tournament): Evaporation (learning) rate.
+#'   - obsIDToUse: observation ID to use (required if multiple observation IDs).
 #'   - save_mode: Character string indicating how model runs should be saved during training.
 #'     Must be one of:
 #'     \itemize{
