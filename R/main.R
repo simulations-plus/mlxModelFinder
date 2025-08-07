@@ -137,7 +137,7 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
     previous_runs = NULL,
     output = NULL,
     convergence_threshold = 0.75,
-    initial_iiv_forced_iter = 5,
+    initial_iiv_forced_iter = 3,
     rho = ifelse(is.null(settings$iiv) || !settings$iiv, 0.4, 0.6),
     save_mode = "best",
     keys = keys
