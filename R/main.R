@@ -171,7 +171,31 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
 
   lixoftConnectors::initializeLixoftConnectors(force = TRUE)
 
+  # Load and clean project
   lixoftConnectors::loadProject(project)
+
+  init_var <- lixoftConnectors::getIndividualParameterModel()$variability
+  init_var <- lapply(init_var, function(x) {
+    x[] <- TRUE
+    return(x)
+  })
+
+  init_cor <- lixoftConnectors::getIndividualParameterModel()$correlationBlocks
+  init_cor <- lapply(init_cor, function(x) list())
+
+  init_cov <- lixoftConnectors::getIndividualParameterModel()$covariateModel
+  init_cov <- lapply(init_cov, function(x) {
+    x[] <- FALSE
+    return(x)
+  })
+
+  lixoftConnectors::setIndividualParameterModel(list(
+    variability = init_var,
+    correlationBlocks = init_cor,
+    covariateModel = init_cov
+  ))
+
+  print(lixoftConnectors::getIndividualParameterModel())
 
   settings$result_folder <- lixoftConnectors::getProjectSettings()$directory
 
