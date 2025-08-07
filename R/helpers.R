@@ -77,11 +77,13 @@ renameParams <- function(input, library) {
 }
 
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL, obsIDToUse = NULL) {
+  error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
   lixoftConnectors::setStructuralModel(model)
 
   if (!is.null(obsIDToUse)) {
     model_output <- lixoftConnectors::getMapping()$mapping[[1]]$modelOutput
     lixoftConnectors::setMapping(list(list(obsId = obsIDToUse, modelOutput = model_output)))
+    lixoftConnectors::setErrorModel(error_model)
   }
 
   project_path <- gsub("\\\\", "/", tempfile(pattern = "project", fileext = ".mlxtran"))
