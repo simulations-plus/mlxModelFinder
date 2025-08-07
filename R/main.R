@@ -195,8 +195,6 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
     covariateModel = init_cov
   ))
 
-  print(lixoftConnectors::getIndividualParameterModel())
-
   settings$result_folder <- lixoftConnectors::getProjectSettings()$directory
 
   if (settings$save_mode != "none") {
