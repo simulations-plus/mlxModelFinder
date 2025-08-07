@@ -10,12 +10,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
   if (settings$iiv) {
     probas_iiv <- iiv_probabilities(library)
   }
-  
+
   # Initialize probabilities for error model
   if (settings$error) {
     probas_error <- probabilities(list(error = c("constant", "proportional", "combined1", "combined2")))
   }
-  
+
   # --- ACO State Variables ---
   iteration <- 0
   models_tested <- 0
@@ -28,14 +28,14 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
   if (!is.null(settings$previous_runs) && nrow(settings$previous_runs) > 0) {
     cli::cli_alert_info("Seeding run history with {nrow(settings$previous_runs)} previous results.")
     model_def_cols <- setdiff(colnames(settings$previous_runs), c("metric", "rank"))
-    
+
     hashes <- apply(settings$previous_runs[, model_def_cols, drop = FALSE], 1, create_model_hash)
-    
+
     prev_runs_list <- split(settings$previous_runs, seq(nrow(settings$previous_runs)))
     names(prev_runs_list) <- hashes
     list_of_runs <- prev_runs_list
   }
-  
+
   # --- Main ACO Loop ---
   repeat {
     iteration <- iteration + 1
@@ -45,12 +45,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       total = n_ants,
       clear = FALSE
     )
-    
+
     # Sample structural models based on their probabilities
     p_iiv <- if (settings$iiv) probas_iiv else NULL
     p_err <- if (settings$error) probas_error else NULL
     models <- models(probas_struct, n_ants, p_iiv = p_iiv, p_err = p_err)
-    
+
     # --- Pre-processing of Sampled Models ---
     # Force IIV exploration in early iterations
     if (settings$iiv && iteration <= settings$initial_iiv_forced_iter) {
@@ -58,34 +58,34 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     }
 
     # For certain delay models, absorption is not a meaningful parameter
-    if (library == "pk") {
+    if (library == "pk" && requiredFilters$administration %in% c("oral", "oralBolus")) {
       is_special_delay <- models$struct[, "delay"] == "transitCompartments"
       if (sum(is_special_delay) > 0)
         models$struct[is_special_delay, "absorption"] <- NA
     }
-    
+
     # This list will hold the results for the current iteration
     iter_results_list <- vector("list", n_ants)
-    
+
     # --- Evaluate Models (Ants) ---
     for (i in 1:n_ants) {
 
       model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
       lixoftConnectors::setStructuralModel(model)
-      
+
       # Combine the structural, IIV, and error components into a single definition
       current_model_df <- as.data.frame(models$struct)[i, ]
-      
+
       if (settings$iiv) {
         param_names <- renameParams(lixoftConnectors::getIndividualParameterModel()$name, library)
         models$iiv[i, !(colnames(models$iiv) %in% param_names)] <- NA
         current_model_df <- cbind(current_model_df, as.data.frame(models$iiv)[i, ])
       }
-      
+
       if (settings$error) {
         current_model_df <- cbind(current_model_df, data.frame(error = models$error[[i, "error"]]))
       }
-      
+
       # Generate a unique hash for the current model configuration
       model_hash <- create_model_hash(current_model_df)
 
@@ -101,19 +101,19 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       error_model <- if (settings$error) as.data.frame(models$error)[i, ] else NULL
 
       runModel(model, iiv = iiv_params, error = error_model)
-      
+
       models_tested <- models_tested + 1
-      
+
       # Calculate the performance metric
       metric <- metric_func()
-      
+
       if (settings$save_mode == "all")
         lixoftConnectors::saveProject(file.path(
           settings$result_folder,
           "autoBuild",
           paste0("run_", models_tested, ".mlxtran")
         ))
-      
+
       if (metric < best_metric) {
         best_metric <- metric
         if (settings$save_mode == "best")
@@ -121,7 +121,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
             file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
           )
       }
-      
+
       # Store results
       model_info <- current_model_df
       model_info$metric <- metric
@@ -129,16 +129,16 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       # Add the new result to the main history and the current iteration's list
       list_of_runs[[model_hash]] <- model_info
       iter_results_list[[i]] <- model_info
-      
+
       cli::cli_progress_update()
     }
     cli::cli_progress_done()
-    
+
     # --- Post-Iteration Processing ---
     # Efficiently combine the list of results into a single data frame
     iter_models <- do.call(rbind, Filter(Negate(is.null), iter_results_list))
     rownames(iter_models) <- NULL
-    
+
     # Save current progress to a file if requested
     if (!is.null(settings$output)) {
       full_results_df <- do.call(rbind, list_of_runs)
@@ -147,13 +147,13 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
         write.csv(full_results_df, file = settings$output, row.names = FALSE)
       }, error = function(e) cli::cli_alert_warning("Error when writing model list to a file: File is likely open in Excel"))
     }
-    
+
     # Sort the models from the current iteration by performance and rank them
     iter_models <- iter_models[order(iter_models$metric), ]
     iter_models$rank <- 1:nrow(iter_models)
 
     iter_models <- postprocessModels(iter_models)
-    
+
     # --- Update Pheromones (Probabilities) ---
     probas_struct <- updateProbabilities(probas_struct, iter_models, rho = settings$rho)
     if (settings$iiv && iteration > settings$initial_iiv_forced_iter) {
@@ -162,7 +162,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     if (settings$error) {
       probas_error <- updateProbabilities(probas_error, iter_models, rho = settings$rho)
     }
-    
+
     # --- Reporting ---
     cli::cli_alert_info("Total number of models tested so far: {models_tested}")
     cli::cli_alert_info("Best model found in iteration {iteration}:")
@@ -180,7 +180,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
         cli::cli_li("{.field {colname}}: {.value {val}}")
     }
     cli::cli_end(ulid)
-    
+
     # Store and plot probability history
     history_list[[iteration + 1]] <- tidyProbabilities(probas_struct, iteration)
     plotProbabilities(history_list, iteration)
@@ -188,7 +188,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     # --- Check for Convergence ---
     model_defs_for_check <- iter_models[, setdiff(names(iter_models), c("metric", "rank"))]
     row_counts <- as.data.frame(table(do.call(paste, model_defs_for_check)))
-    
+
     if (nrow(row_counts) > 0 && max(row_counts$Freq) > (settings$convergence_threshold * n_ants)) {
       cli::cli_alert_success("Convergence criteria met. More than {settings$convergence_threshold*100}% of ants chose the same model.")
       break
@@ -196,10 +196,10 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
   }
 
   cli::cli_alert_success("ACO search complete.")
-  
+
   final_results <- do.call(rbind, list_of_runs)
   rownames(final_results) <- NULL
-  
+
   return(final_results[order(final_results$metric), ])
 }
 

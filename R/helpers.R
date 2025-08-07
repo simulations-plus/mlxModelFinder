@@ -1,5 +1,5 @@
 getAllFilters <- function(library, requiredFilters) {
-  
+
   if (library == "pk" && requiredFilters$administration == "oralBolus")
     return(list(
       delay = c("noDelay", "lagTime", "transitCompartments"),
@@ -8,7 +8,7 @@ getAllFilters <- function(library, requiredFilters) {
       elimination = c("linear", "MichaelisMenten", "combined"),
       bioavailability = c("true", "false")
     ))
-  
+
   if (library == "pk" && requiredFilters$administration == "oral")
     return(list(
       delay = c("noDelay", "lagTime", "transitCompartments"),
@@ -16,17 +16,17 @@ getAllFilters <- function(library, requiredFilters) {
       distribution = c("1compartment", "2compartments", "3compartments"),
       elimination = c("linear", "MichaelisMenten", "combined")
     ))
-  
+
   if (library == "pk")
     return(list(
-      delay = c("noDelay", "lagTime"),
+      delay = c("noDelay"),
       distribution = c("1compartment", "2compartments", "3compartments"),
       elimination = c("linear", "MichaelisMenten", "combined")
     ))
 }
 
 updateFilters <- function(library, filters, requiredFilters) {
-  
+
   all_filters <- getAllFilters(library, requiredFilters)
   updated_filters <- list()
   for (key in names(all_filters)) {
@@ -78,13 +78,13 @@ renameParams <- function(input, library) {
 
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL) {
   lixoftConnectors::setStructuralModel(model)
-  
+
   project_path <- gsub("\\\\", "/", tempfile(pattern = "project", fileext = ".mlxtran"))
   lixoftConnectors::saveProject(project_path)
   if (is.null(initial_func))
     path <- initialValues(project_path)
   lixoftConnectors::loadProject(path)
-  
+
   if (!is.null(iiv)) {
     param_names <- lixoftConnectors::getIndividualParameterModel()$name
     if ("V1" %in% names(iiv) && "V" %in% param_names) {
@@ -96,13 +96,13 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL) {
     iiv <- unlist(iiv[, !is.na(iiv[1, ])])
     lixoftConnectors::setIndividualParameterModel(list(variability = list(id = iiv)))
   }
-  
+
   if (!is.null(error)) {
     error <- as.list(error)
     names(error) <- lixoftConnectors::getObservationInformation()$name[[1]]
     lixoftConnectors::setErrorModel(error)
   }
-  
+
   scenario <- lixoftConnectors::getScenario()
   scenario$tasks <- c(populationParameterEstimation = TRUE,
                       conditionalDistributionSampling = TRUE,
@@ -129,16 +129,16 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
         elimination = c(1, 2, 3),
         bioavailability = c(1, 0)
       )
-      
+
       all_models <- expand.grid(filters, stringsAsFactors = FALSE)
-      
+
       if ("transitCompartments" %in% all_models$delay)
         all_models[all_models$delay == "transitCompartments", ]$absorption <- NA
     }
-    
+
     common_names <- intersect(names(nb_params), names(filters))
     param_maps <- mapply(setNames, nb_params[common_names], filters[common_names], SIMPLIFY = FALSE)
-    
+
     param_values <- mapply(function(column_data, map) {
       map[column_data]
     }, all_models, param_maps)
@@ -153,7 +153,7 @@ tidyProbabilities <- function(probas, iteration) {
   col_names <- colnames(probas$probas)
   list_of_cols <- vector("list", length(col_names))
   names(list_of_cols) <- col_names
-  
+
   for (col_name in col_names) {
     list_of_cols[[col_name]] <- data.frame(
       Iteration = iteration,
@@ -170,10 +170,10 @@ tidyProbabilities <- function(probas, iteration) {
 }
 
 plotProbabilities <- function(history_list, iteration) {
-  
+
   plot_data <- do.call(rbind, history_list)
   plot_data <- subset(plot_data, !is.na(Meaning))
-  
+
   out <- by(data = plot_data, INDICES = plot_data$Category, FUN = function(p) {
     p <- droplevels(p)
     label_data <- subset(p, Iteration == iteration)

@@ -124,6 +124,10 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
     validate_no_argument_function(initial_func, "initial_func")
 
   # --- Default Settings ---
+  if (requiredFilters$administration %in% c("oral", "oralBolus"))
+    keys <- c("distribution", "absorption_delay", "distribution", "elimination")
+  else
+    keys <- c("delay", "distribution", "elimination")
   default_settings <- list(
     N = ifelse(is.null(settings$iiv) || !settings$iiv, 10, 20),
     iiv = FALSE,
@@ -135,7 +139,7 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
     initial_iiv_forced_iter = 5,
     rho = ifelse(is.null(settings$iiv) || !settings$iiv, 0.4, 0.6),
     save_mode = "best",
-    keys = c("distribution", "absorption_delay", "distribution", "elimination")
+    keys = keys
   )
 
   # Overwrite defaults with user-provided settings
