@@ -16,7 +16,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
   res$metric <- rep(NA, nrow(res))
 
   cli_progress_bar(
-    paste("Progress"),
+    format = "Running models {cli::pb_bar} | {cli::pb_percent}",
     total = nrow(all_models),
     clear = FALSE
   )

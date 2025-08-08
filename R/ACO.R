@@ -41,7 +41,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     iteration <- iteration + 1
     cli::cli_h2("Iteration {iteration}")
     cli::cli_progress_bar(
-      "Running models (Ants)",
+      format = "Running models {cli::pb_bar} | {i}/{n_ants}",
       total = n_ants,
       clear = FALSE
     )
