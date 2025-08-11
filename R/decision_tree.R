@@ -276,7 +276,11 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       }, error = function(e) cli::cli_alert_warning("Error when writing model list to a file: File is likely open in Excel"))
     }
 
-    cli::cli_alert_success("Done")
+    cli::cli_alert_success(
+      paste0("Done. Selected: ",
+             paste(unlist(base_model_df[, features, drop = FALSE]), collapse = ", ")
+      )
+    )
   }
 
   if (settings$plot) {
