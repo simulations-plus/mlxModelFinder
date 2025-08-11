@@ -170,6 +170,13 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     cli::cli_alert_info("Algorithm automatically selected: {algorithm}")
   }
 
+  # --- Do not plot diagrams if DiagrammeR not installed ---
+  if (settings$plot && algorithm == "decision_tree") {
+    settings$plot <- isTRUE(requireNamespace("DiagrammeR", quietly = TRUE))
+    if (!settings$plot)
+      warning("Package 'DiagrammeR' is not installed, so the diagram will not be plotted.", call. = FALSE)
+  }
+
   # --- Selection of Metric Function ---
   if (is.null(metric_func)) {
     if (settings$iiv) {
