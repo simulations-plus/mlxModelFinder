@@ -32,25 +32,26 @@ runStructuralModelBuilding(
 }
 If a filter is not specified, all its possible options will be included in the search.}
 
-\item{algorithm}{(optional) Algorithm to use. Options are "ACO", "tournament", "exhaustive_search", "decision_tree". If not provided, it's automatically selected: "ACO" for search spaces larger than 15,000 models, and "decision_tree" otherwise.}
+\item{algorithm}{(optional) Algorithm to use. Options are "ACO", "tournament", "exhaustive_search", "decision_tree". If not provided, it's automatically selected: "ACO" if searching for IIV, and "decision_tree" otherwise.}
 
 \item{settings}{(optional) A list of settings for the algorithms.
 \itemize{
-\item N: Number of models to test per iteration (ants/wins for ACO/Tournament).
-\item iiv: Boolean, whether to explore interindividual variability.
-\item error: Boolean, whether to explore the residual error model.
-\item seed: A random seed for reproducibility.
+\item N: Number of models to test per iteration (ants/wins for ACO/Tournament). Default depends on the search space size.
+\item iiv: Boolean, whether to explore interindividual variability. Default: FALSE.
+\item error: Boolean, whether to explore the residual error model. Default: FALSE.
+\item seed: A random seed for reproducibility. Default: 123456.
 \item previous_runs: An optional data frame of previous model runs to learn from.
 \item output: Optional file path to save results incrementally (with the csv extension). If not provided, the results are not saved incrementally.
-\item convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75).
-\item initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3).
-\item rho (ACO/Tournament): Evaporation (learning) rate.
+\item convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75). Default: 0.75.
+\item initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3). Default: 3.
+\item rho (ACO/Tournament): Evaporation (learning) rate. Default depends on the search space size.
 \item obsIDToUse: observation ID to use (required if multiple observation IDs).
+\item plot: plot the progress (TRUE/FALSE). Default: TRUE.
 \item save_mode: Character string indicating how model runs should be saved during training.
 Must be one of:
 \itemize{
-\item \code{"none"} (default): Do not save any model runs.
-\item \code{"best"}: Save only the best-performing model based.
+\item \code{"none"}: Do not save any model runs.
+\item \code{"best"} (default): Save only the best-performing model based.
 \item \code{"all"}: Save all model runs.
 }
 Models are saved in the autoBuild subdirectory of the result folder of the project.

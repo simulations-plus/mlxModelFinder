@@ -12,24 +12,24 @@
 #' }
 #' If a filter is not specified, all its possible options will be included in the search.
 #' @param requiredFilters (required) A list of required structural model components. For PK models, options are: administration ("bolus", "infusion", "oral", "oralBolus") and parametrization ("rate", "clearance").
-#' @param algorithm (optional) Algorithm to use. Options are "ACO", "tournament", "exhaustive_search", "decision_tree". If not provided, it's automatically selected: "ACO" for search spaces larger than 15,000 models, and "decision_tree" otherwise.
+#' @param algorithm (optional) Algorithm to use. Options are "ACO", "tournament", "exhaustive_search", "decision_tree". If not provided, it's automatically selected: "ACO" if searching for IIV, and "decision_tree" otherwise.
 #' @param settings (optional) A list of settings for the algorithms.
-#'   - N: Number of models to test per iteration (ants/wins for ACO/Tournament).
-#'   - iiv: Boolean, whether to explore interindividual variability.
-#'   - error: Boolean, whether to explore the residual error model.
-#'   - seed: A random seed for reproducibility.
+#'   - N: Number of models to test per iteration (ants/wins for ACO/Tournament). Default depends on the search space size.
+#'   - iiv: Boolean, whether to explore interindividual variability. Default: FALSE.
+#'   - error: Boolean, whether to explore the residual error model. Default: FALSE.
+#'   - seed: A random seed for reproducibility. Default: 123456.
 #'   - previous_runs: An optional data frame of previous model runs to learn from.
 #'   - output: Optional file path to save results incrementally (with the csv extension). If not provided, the results are not saved incrementally.
-#'   - convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75).
-#'   - initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3).
-#'   - rho (ACO/Tournament): Evaporation (learning) rate.
+#'   - convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75). Default: 0.75.
+#'   - initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3). Default: 3.
+#'   - rho (ACO/Tournament): Evaporation (learning) rate. Default depends on the search space size.
 #'   - obsIDToUse: observation ID to use (required if multiple observation IDs).
-#'   - plot: plot the progress (True/False)
+#'   - plot: plot the progress (TRUE/FALSE). Default: TRUE.
 #'   - save_mode: Character string indicating how model runs should be saved during training.
 #'     Must be one of:
 #'     \itemize{
-#'       \item \code{"none"} (default): Do not save any model runs.
-#'       \item \code{"best"}: Save only the best-performing model based.
+#'       \item \code{"none"}: Do not save any model runs.
+#'       \item \code{"best"} (default): Save only the best-performing model based.
 #'       \item \code{"all"}: Save all model runs.
 #'     }
 #'     Models are saved in the autoBuild subdirectory of the result folder of the project.
