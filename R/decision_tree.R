@@ -127,8 +127,9 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     keys <- keys[keys != "delay"]
   }
 
-  base <- data.tree::Node$new("Base")
+  base <- data.tree::Node$new("Initial model")
   base$metric <- metric
+  base$diff <- 0
 
   path <- c()
 
@@ -142,6 +143,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
     child <- Reduce(`[[`, c(list(base), path))$AddChild(base_value_string)
     child$metric <- base_metric
+    child$diff <- 0
     path <- c(path, base_value_string)
 
     for (i in 1:nrow(levels)) {
@@ -239,6 +241,17 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     cli::cli_alert_success("Done")
   }
 
+  nodes <- data.tree::Traverse(base)
+  data.tree::Do(nodes,
+     function(node) {
+       data.tree::SetNodeStyle(node,
+                    fillcolor = ifelse(node$diff <= 0, "#e6f7e6", "white"),
+                    style = "filled",
+                    fontcolor = "black",
+                    inherit = FALSE
+       )
+     }
+  )
   data.tree::SetEdgeStyle(base, label = function(node) ifelse(is.null(node$diff), "0", round(node$diff, 2)))
   print(plot(base))
 
