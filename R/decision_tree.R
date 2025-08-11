@@ -64,6 +64,28 @@ getBaseModel <- function(library, filters) {
   return(as.data.frame(base_model))
 }
 
+textify <- function(df, run = NULL) {
+
+  if (is.data.frame(df))
+    vals <- unlist(df[1, ], use.names = FALSE)
+  else
+    vals <- df
+
+  vals <- gsub("([a-z])([A-Z])", "\\1 \\2", vals)
+
+  vals <- gsub("([0-9])([A-Za-z])", "\\1 \\2", vals)
+  vals <- gsub("([A-Za-z])([0-9])", "\\1 \\2", vals)
+
+  vals <- tolower(vals)
+
+  text <- paste(vals, collapse = ", ")
+
+  if (!is.null(run))
+    text <- paste0(text, "\n", "(run_", run, ")")
+
+  return(text)
+}
+
 runDecisionTree <- function(library, filters, requiredFilters, settings, metric_func) {
 
   # --- Initialization ---
@@ -127,9 +149,16 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     keys <- keys[keys != "delay"]
   }
 
-  base <- data.tree::Node$new("Initial model")
-  base$metric <- metric
-  base$diff <- 0
+  if (settings$plot) {
+    base <- data.tree::Node$new(paste0(
+      "Base model\n(",
+      textify(base_model_df),
+      ")"
+    ))
+    base$metric <- metric
+    base$diff <- 0
+    data.tree::SetNodeStyle(base)
+  }
 
   path <- c()
 
@@ -139,12 +168,14 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     levels <- order[[key]]
 
     base_value <- base_model_df[, colnames(base_model_df) %in% names(levels)]
-    base_value_string <- paste(unlist(base_value), collapse = "_")
+    base_value_string <- textify(base_value)
 
-    child <- Reduce(`[[`, c(list(base), path))$AddChild(base_value_string)
-    child$metric <- base_metric
-    child$diff <- 0
-    path <- c(path, base_value_string)
+    if (settings$plot) {
+      child <- Reduce(`[[`, c(list(base), path))$AddChild(base_value_string)
+      child$metric <- base_metric
+      child$diff <- 0
+      path <- c(path, base_value_string)
+    }
 
     for (i in 1:nrow(levels)) {
 
@@ -169,9 +200,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       current_model_df <- base_model_df
       current_model_df[, features] <- value
 
-      value_string <- paste(unlist(value), collapse = "_")
+      value_string <- textify(value)
 
-      child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
+      if (settings$plot)
+        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
 
       if (library == "pk") {
         is_special_delay <- current_model_df[, "delay"] == "transitCompartments"
@@ -184,8 +216,12 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       # Check if this exact model has been run before
       if (model_hash %in% names(list_of_runs)) {
         metric <- list_of_runs[[model_hash]]$metric
-        child$metric <- metric
-        child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+
+        if (settings$plot) {
+          child$metric <- metric
+          child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+        }
+
         next
       }
 
@@ -215,8 +251,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       model_info <- current_model_df
       model_info$metric <- metric
 
-      child$metric <- metric
-      child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+      if (settings$plot) {
+        child$metric <- metric
+        child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+      }
 
       # Add the new result to the main history and the current iteration's list
       list_of_runs[[model_hash]] <- model_info
@@ -241,19 +279,20 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     cli::cli_alert_success("Done")
   }
 
-  nodes <- data.tree::Traverse(base)
-  data.tree::Do(nodes,
-     function(node) {
-       data.tree::SetNodeStyle(node,
-                    fillcolor = ifelse(node$diff <= 0, "#e6f7e6", "white"),
-                    style = "filled",
-                    fontcolor = "black",
-                    inherit = FALSE
-       )
-     }
-  )
-  data.tree::SetEdgeStyle(base, label = function(node) ifelse(is.null(node$diff), "0", round(node$diff, 2)))
-  print(plot(base))
+  if (settings$plot) {
+    lapply(seq_along(path), function(i) {
+      x <- Reduce(`[[`, c(list(base), path[seq_len(i)]))
+      data.tree::SetNodeStyle(x,
+                              fillcolor = "#e6f7e6",
+                              style = "filled,rounded",
+                              fontcolor = "black",
+                              inherit = FALSE
+      )
+    })
+    data.tree::SetEdgeStyle(base, label = function(node) round(node$diff, 2))
+    data.tree::SetNodeStyle(base, shape = "box", style = "rounded")
+    print(plot(base))
+  }
 
   final_results <- do.call(rbind, list_of_runs)
   rownames(final_results) <- NULL

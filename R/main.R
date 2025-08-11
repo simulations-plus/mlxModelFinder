@@ -24,6 +24,7 @@
 #'   - initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3).
 #'   - rho (ACO/Tournament): Evaporation (learning) rate.
 #'   - obsIDToUse: observation ID to use (required if multiple observation IDs).
+#'   - plot: plot the progress (True/False)
 #'   - save_mode: Character string indicating how model runs should be saved during training.
 #'     Must be one of:
 #'     \itemize{
@@ -140,7 +141,8 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
     initial_iiv_forced_iter = 3,
     rho = ifelse(is.null(settings$iiv) || !settings$iiv, 0.4, 0.6),
     save_mode = "best",
-    keys = keys
+    keys = keys,
+    plot = TRUE
   )
 
   # Overwrite defaults with user-provided settings
