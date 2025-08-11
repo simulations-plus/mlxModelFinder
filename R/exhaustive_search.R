@@ -27,7 +27,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
     error_model <- if (settings$error) as.data.frame(all_models$error)[i, ] else NULL
 
-    runModel(model, error = error_model, obsIDToUse = settings$obsIDToUse)
+    runModel(model, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
     metric <- metric_func()
     res[i, ]$metric <- metric
 

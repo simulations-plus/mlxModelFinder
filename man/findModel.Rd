@@ -45,8 +45,9 @@ If a filter is not specified, all its possible options will be included in the s
 \item convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75). Default: 0.75.
 \item initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3). Default: 3.
 \item rho (ACO/Tournament): Evaporation (learning) rate. Default depends on the search space size.
-\item obsIDToUse: observation ID to use (required if multiple observation IDs).
-\item plot: plot the progress (TRUE/FALSE). Default: TRUE.
+\item obsIDToUse: Observation ID to use (required if multiple observation IDs).
+\item plot: Plot the progress (TRUE/FALSE). Default: TRUE.
+\item linearization: Should linearization be used for calculation of log-likelihood if the default metric_func is used. Default: FALSE.
 \item save_mode: Character string indicating how model runs should be saved during training.
 Must be one of:
 \itemize{

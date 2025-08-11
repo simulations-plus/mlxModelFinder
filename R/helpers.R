@@ -50,15 +50,23 @@ initializeWeightMatrix <- function(filter_matrix) {
   return(matrix)
 }
 
-calculateMetricRSEs <- function() {
-  BICc <- lixoftConnectors::getEstimatedLogLikelihood()$importanceSampling[4]
-  RSEs <- lixoftConnectors::getEstimatedStandardErrors()$stochasticApproximation$rse
+calculateMetric <- function(RSEs, linearization) {
+  method <- ifelse(linearization, "linearization", "importanceSampling")
+
+  BICc <- lixoftConnectors::getEstimatedLogLikelihood()[[method]][4]
+  if (is.null(BICc)) return(1e12)
+
+  if (!RSEs) return(BICc)
+
+  method <- ifelse(linearization, "linearization", "stochasticApproximation")
+
+  RSEs <- lixoftConnectors::getEstimatedStandardErrors()[[method]]$rse
   if (is.null(RSEs)) {
     RSEs <- rep(NaN, length(lixoftConnectors::getIndividualParameterModel()$name))
   }
   obs_name <- lixoftConnectors::getObservationInformation()$name
   n_tot <- length(lixoftConnectors::getObservationInformation()[[obs_name]][[obs_name]])
-  if (is.null(BICc)) return(1e12)
+
   return(BICc + length(RSEs[is.nan(RSEs) | RSEs > 50]) * log(n_tot))
 }
 
@@ -76,7 +84,8 @@ renameParams <- function(input, library) {
   return(input)
 }
 
-runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL, obsIDToUse = NULL) {
+runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
+                     obsIDToUse = NULL, linearization = FALSE) {
   error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
   lixoftConnectors::setStructuralModel(model)
 
@@ -117,7 +126,7 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL, obsID
                       conditionalModeEstimation = FALSE,
                       standardErrorEstimation = TRUE,
                       logLikelihoodEstimation = TRUE)
-  scenario$linearization <- FALSE
+  scenario$linearization <- linearization
   lixoftConnectors::setScenario(scenario)
   lixoftConnectors::runScenario()
 }

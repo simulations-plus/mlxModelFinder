@@ -23,8 +23,9 @@
 #'   - convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75). Default: 0.75.
 #'   - initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3). Default: 3.
 #'   - rho (ACO/Tournament): Evaporation (learning) rate. Default depends on the search space size.
-#'   - obsIDToUse: observation ID to use (required if multiple observation IDs).
-#'   - plot: plot the progress (TRUE/FALSE). Default: TRUE.
+#'   - obsIDToUse: Observation ID to use (required if multiple observation IDs).
+#'   - plot: Plot the progress (TRUE/FALSE). Default: TRUE.
+#'   - linearization: Should linearization be used for calculation of log-likelihood if the default metric_func is used. Default: FALSE.
 #'   - save_mode: Character string indicating how model runs should be saved during training.
 #'     Must be one of:
 #'     \itemize{
@@ -145,7 +146,8 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     rho = ifelse(is.null(settings$iiv) || !settings$iiv, 0.4, 0.6),
     save_mode = "best",
     keys = keys,
-    plot = TRUE
+    plot = TRUE,
+    linearization = FALSE
   )
 
   # Overwrite defaults with user-provided settings
@@ -178,13 +180,9 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   }
 
   # --- Selection of Metric Function ---
-  if (is.null(metric_func)) {
-    if (settings$iiv) {
-      metric_func <- calculateMetricRSEs
-    } else {
-      metric_func <- calculateMetricBICc
-    }
-  }
+  if (is.null(metric_func))
+    metric_func <- function() calculateMetric(RSEs = settings$iiv,
+                                              linearization = settings$linearization)
 
   lixoftConnectors::initializeLixoftConnectors(force = TRUE)
 

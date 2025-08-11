@@ -110,7 +110,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   model_hash <- create_model_hash(base_model_df)
   model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
 
-  runModel(model, obsIDToUse = settings$obsIDToUse)
+  runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
 
   # Calculate the performance metric
   metric <- metric_func()
@@ -226,7 +226,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       }
 
       model <- getModelName("pk", filters = append(current_model_df, requiredFilters))
-      runModel(model, obsIDToUse = settings$obsIDToUse)
+      runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
 
       # Calculate the performance metric
       metric <- metric_func()
