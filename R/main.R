@@ -15,8 +15,8 @@
 #' @param algorithm (optional) Algorithm to use. Options are "ACO", "tournament", "exhaustive_search", "decision_tree". If not provided, it's automatically selected: "ACO" if searching for IIV, and "decision_tree" otherwise.
 #' @param settings (optional) A list of settings for the algorithms.
 #'   - N: Number of models to test per iteration (ants/wins for ACO/Tournament). Default depends on the search space size.
-#'   - iiv: Boolean, whether to explore interindividual variability. Default: FALSE.
-#'   - error: Boolean, whether to explore the residual error model. Default: FALSE.
+#'   - findIIV: Boolean, whether to explore interindividual variability. Default: FALSE.
+#'   - findError: Boolean, whether to explore the residual error model. Default: FALSE.
 #'   - seed: A random seed for reproducibility. Default: 123456.
 #'   - previous_runs: An optional data frame of previous model runs to learn from.
 #'   - output: Optional file path to save results incrementally (with the csv extension). If not provided, the results are not saved incrementally.
@@ -40,7 +40,7 @@
 #' @examples
 #' \dontrun{
 #' # Example 1: Default search with oral clearance models and additional filters
-#' runStructuralModelBuilding(
+#' findModel(
 #'   project = file.path(getDemoPath(), "1.creating_and_using_models",
 #'                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
 #'   library = "pk",
@@ -50,7 +50,7 @@
 #' )
 #'
 #' # Example 2: Oral bolus rate-parametrized models on an IV/Oral project
-#' runStructuralModelBuilding(
+#' findModel(
 #'   project = file.path(getDemoPath(), "6.PK_models", "6.2.multiple_routes",
 #'                       "ivOral1_project.mlxtran"),
 #'   library = "pk",
@@ -60,7 +60,7 @@
 #' )
 #'
 #' # Example 3: Bolus route with IIV and residual error estimation
-#' runStructuralModelBuilding(
+#' findModel(
 #'   project = file.path(getDemoPath(), "6.PK_models", "6.1.single_route",
 #'                       "bolusMixed_project.mlxtran"),
 #'   library = "pk",
@@ -69,7 +69,7 @@
 #' )
 #'
 #' # Example 4: Exhaustive search over oral clearance models
-#' runStructuralModelBuilding(
+#' findModel(
 #'   project = file.path(getDemoPath(), "1.creating_and_using_models",
 #'                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
 #'   library = "pk",
@@ -79,7 +79,7 @@
 #' )
 #'
 #' # Example 5: Decision tree search strategy
-#' runStructuralModelBuilding(
+#' findModel(
 #'   project = file.path(getDemoPath(), "1.creating_and_using_models",
 #'                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
 #'   library = "pk",
@@ -98,16 +98,18 @@
 #' @importFrom gridExtra grid.arrange
 #'
 #' @export
-runStructuralModelBuilding <- function(project, library, requiredFilters,
-                                       filters = NULL, algorithm = NULL,
-                                       settings = NULL, metric_func = NULL,
-                                       initial_func = NULL) {
+findModel <- function(project, library, requiredFilters, filters = NULL,
+                      algorithm = NULL, settings = NULL, metric_func = NULL,
+                      initial_func = NULL) {
 
   op = options()
   op$lixoft_notificationOptions$warnings = 1
   op$lixoft_notificationOptions$info = 1
   op$cli.progress_show_after = 0
   options(op)
+
+  names(settings)[names(settings) == "findIIV"] <- "iiv"
+  names(settings)[names(settings) == "findError"] <- "error"
 
   # --- Argument Checks ---
   validate_project(project)
@@ -130,6 +132,7 @@ runStructuralModelBuilding <- function(project, library, requiredFilters,
     keys <- c("distribution", "absorption_delay", "distribution", "elimination")
   else
     keys <- c("delay", "distribution", "elimination")
+
   default_settings <- list(
     N = ifelse(is.null(settings$iiv) || !settings$iiv, 10, 20),
     iiv = FALSE,
