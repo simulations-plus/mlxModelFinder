@@ -2,8 +2,8 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
   all_models <- expand.grid(filters, stringsAsFactors = FALSE)
 
-  if ("transitCompartments" %in% all_models$delay)
-    all_models[all_models$delay == "transitCompartments", ]$absorption <- NA
+  if ("transitCompartments" %in% all_models$absorption)
+    all_models[all_models$absorption == "transitCompartments", ]$delay <- NA
 
   all_models <- unique(all_models)
 

@@ -141,8 +141,9 @@ getModelName <- function(library, filters = list()) {
   new_filters <- filters
   
   if (library == "pk") {
-    if (!is.null(filters$delay) && filters$delay == "transitCompartments") {
+    if (!is.null(filters$absorption) && filters$absorption == "transitCompartments") {
       new_filters$absorption <- NULL
+      new_filters$delay <- "transitCompartments"
     }
     if (!is.null(filters$elimination) && filters$elimination == "MichaelisMenten" &&
         !is.null(filters$distribution) && filters$distribution == "1compartment") {

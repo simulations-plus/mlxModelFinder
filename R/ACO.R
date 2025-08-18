@@ -57,11 +57,11 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       models$iiv[] <- TRUE
     }
 
-    # For certain delay models, absorption is not a meaningful parameter
+    # For certain absorption models, delay is not a meaningful parameter
     if (library == "pk" && requiredFilters$administration %in% c("oral", "oralBolus")) {
-      is_special_delay <- models$struct[, "delay"] == "transitCompartments"
-      if (sum(is_special_delay) > 0)
-        models$struct[is_special_delay, "absorption"] <- NA
+      is_special_abs <- models$struct[, "absorption"] == "transitCompartments"
+      if (sum(is_special_abs) > 0)
+        models$struct[is_special_abs, "delay"] <- NA
     }
 
     # This list will hold the results for the current iteration

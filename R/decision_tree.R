@@ -7,8 +7,8 @@ featureLevels <- function(library) {
       level = c(1, 2)
     )
     order$absorption_delay <- data.frame(
-      delay = c("noDelay", "noDelay", "noDelay", "lagTime", "lagTime", "lagTime", "transitCompartments"),
-      absorption = c("firstOrder", "zeroOrder", "sigmoid", "firstOrder", "zeroOrder", "sigmoid", "firstOrder"),
+      delay = c("noDelay", "noDelay", "noDelay", "lagTime", "lagTime", "lagTime", "noDelay"),
+      absorption = c("firstOrder", "zeroOrder", "sigmoid", "firstOrder", "zeroOrder", "sigmoid", "transitCompartments"),
       level = c(1, 1, 2, 2, 2, 3, 3)
     )
     order$distribution <- data.frame(
@@ -36,7 +36,7 @@ getBaseModel <- function(library, filters) {
 
   if (all(c("absorption", "delay") %in% names(filters))) {
     valid_combinations <- order$absorption_delay[
-      order$absorption_delay$delay %in% filters$delay &
+      (order$absorption_delay$delay %in% filters$delay | is.na(order$absorption_delay$delay)) &
         order$absorption_delay$absorption %in% filters$absorption,
     ]
     if (nrow(valid_combinations) > 0) {
@@ -184,7 +184,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
       all_match <- all(sapply(features, function(col) {
         val <- value[[col]]
-        val %in% filters[[col]]
+        val %in% filters[[col]] || is.na(val)
       }))
 
       if (!all_match) next
@@ -206,8 +206,8 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
         child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
 
       if (library == "pk") {
-        is_special_delay <- current_model_df[, "delay"] == "transitCompartments"
-        if (is_special_delay) current_model_df[is_special_delay, "absorption"] <- NA
+        is_special_abs <- current_model_df[, "absorption"] == "transitCompartments"
+        if (is_special_abs) current_model_df[is_special_abs, "delay"] <- NA
       }
 
       # Generate a unique hash for the current model configuration
@@ -283,6 +283,151 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     )
   }
 
+  final_results <- do.call(rbind, list_of_runs)
+  rownames(final_results) <- NULL
+
+  model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
+  lixoftConnectors::setStructuralModel(model)
+
+  variability <- NA
+  if (settings$iiv) {
+    cli::cli_h3("Optimizing IIV")
+
+    level <- names(lixoftConnectors::getIndividualParameterModel()$variability)[[1]]
+
+    repeat {
+      improved <- FALSE
+      params <- lixoftConnectors::getIndividualParameterModel()$variability[[1]]
+      params_wo_var <- params[params]
+      base_params <- params
+
+      if (settings$plot) {
+        child <- Reduce(`[[`, c(list(base), path))$AddChild("No change")
+        child$metric <- base_metric
+        child$diff <- 0
+        path <- c(path, "No change")
+      }
+
+      for (param in names(params_wo_var)) {
+        lixoftConnectors::setIndividualParameterModel(
+          list(variability = setNames(list(setNames(FALSE, param)), level))
+        )
+        scenario <- lixoftConnectors::getScenario()
+        scenario$tasks <- c(populationParameterEstimation = TRUE,
+                            conditionalDistributionSampling = TRUE,
+                            conditionalModeEstimation = FALSE,
+                            standardErrorEstimation = TRUE,
+                            logLikelihoodEstimation = TRUE)
+        scenario$linearization <- settings$linearization
+        lixoftConnectors::setScenario(scenario)
+        lixoftConnectors::runScenario()
+
+        metric <- metric_func()
+        models_tested <- models_tested + 1
+
+        if (settings$save_mode == "all")
+          lixoftConnectors::saveProject(file.path(
+            settings$result_folder,
+            "autoBuild",
+            paste0("run_", models_tested, ".mlxtran")
+          ))
+
+        value_string <- paste0("No IIV on ", param)
+
+        if (settings$plot) {
+          child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
+          child$metric <- metric
+          child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+        }
+
+        if (metric < base_metric) {
+          base_metric <- metric
+          base_params <- replace(params, param, FALSE)
+          improved <- TRUE
+          path[length(path)] <- value_string
+
+          if (settings$save_mode == "best")
+            lixoftConnectors::saveProject(
+              file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+            )
+        }
+      }
+
+      variability <- base_params
+
+      if (!improved) break
+    }
+
+    cli::cli_alert_success("Done")
+  }
+
+  error <- NA
+  if (settings$error) {
+    cli::cli_h3("Optimizing error model")
+
+    errors <- c("constant", "proportional", "combined1", "combined2")
+    base_error <- error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel[[1]]
+    obs_name <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)[[1]]
+
+    if (settings$plot) {
+      child <- Reduce(`[[`, c(list(base), path))$AddChild(base_error)
+      child$metric <- base_metric
+      child$diff <- 0
+      path <- c(path, base_error)
+    }
+
+    for (error in errors) {
+      if (error == error_model)
+        next
+
+      do.call(lixoftConnectors::setErrorModel,
+              setNames(list(error), obs_name))
+
+      scenario <- lixoftConnectors::getScenario()
+      scenario$tasks <- c(populationParameterEstimation = TRUE,
+                          conditionalDistributionSampling = TRUE,
+                          conditionalModeEstimation = FALSE,
+                          standardErrorEstimation = TRUE,
+                          logLikelihoodEstimation = TRUE)
+      scenario$linearization <- settings$linearization
+      lixoftConnectors::setScenario(scenario)
+      lixoftConnectors::runScenario()
+
+      metric <- metric_func()
+      models_tested <- models_tested + 1
+
+      if (settings$save_mode == "all")
+        lixoftConnectors::saveProject(file.path(
+          settings$result_folder,
+          "autoBuild",
+          paste0("run_", models_tested, ".mlxtran")
+        ))
+
+      value_string <- error
+
+      if (settings$plot) {
+        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
+        child$metric <- metric
+        child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+      }
+
+      if (metric < base_metric) {
+        base_metric <- metric
+        base_error <- error
+        path[length(path)] <- value_string
+
+        if (settings$save_mode == "best")
+          lixoftConnectors::saveProject(
+            file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+          )
+      }
+    }
+
+    error <- base_error
+
+    cli::cli_alert_success("Done")
+  }
+
   if (settings$plot) {
     lapply(seq_along(path), function(i) {
       x <- Reduce(`[[`, c(list(base), path[seq_len(i)]))
@@ -296,40 +441,6 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     data.tree::SetEdgeStyle(base, label = function(node) round(node$diff, 2))
     data.tree::SetNodeStyle(base, shape = "box", style = "rounded")
     print(plot(base))
-  }
-
-  final_results <- do.call(rbind, list_of_runs)
-  rownames(final_results) <- NULL
-
-  model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
-  lixoftConnectors::setStructuralModel(model)
-
-  variability <- NA
-  if (settings$iiv) {
-    cli::cli_h3("Optimizing IIV")
-
-    project_path <- gsub("\\\\", "/", tempfile(pattern = "project", fileext = ".mlxtran"))
-    lixoftConnectors::saveProject(project_path)
-    project <- Rsmlx::buildVar(project = project_path, print = FALSE)
-    variability <- project$variability.model
-    lixoftConnectors::loadProject(project$project)
-
-    cli::cli_alert_success("Done")
-  }
-
-  error <- NA
-  if (settings$error) {
-    cli::cli_h3("Optimizing error model")
-
-    project_path <- gsub("\\\\", "/", tempfile(pattern = "project", fileext = ".mlxtran"))
-    lixoftConnectors::saveProject(project_path)
-    suppressMessages(
-      project <- Rsmlx::buildmlx(project = project_path, model = "residualError", print = FALSE)
-    )
-    lixoftConnectors::loadProject(project$project)
-    error <- project$error.model
-
-    cli::cli_alert_success("Done")
   }
 
   if (settings$save_mode == "best")

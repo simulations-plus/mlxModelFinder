@@ -4,8 +4,8 @@
 #' @param library (required) The model library to use. Options: "pk", "tmdd", "pkpd".
 #' @param filters (optional) A list defining the structural model components to explore. For the "pk" library, the options are:
 #' \itemize{
-#'   \item \strong{delay}: "noDelay", "lagTime", "transitCompartments"
-#'   \item \strong{absorption}: "zeroOrder", "firstOrder", "sigmoid"
+#'   \item \strong{delay}: "noDelay", "lagTime"
+#'   \item \strong{absorption}: "zeroOrder", "firstOrder", "sigmoid", "transitCompartments"
 #'   \item \strong{distribution}: "1compartment", "2compartments", "3compartments"
 #'   \item \strong{elimination}: "linear", "MichaelisMenten", "combined"
 #'   \item \strong{bioavailability} (if administration is "oralBolus"): "true", "false"

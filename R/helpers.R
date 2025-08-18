@@ -2,8 +2,8 @@ getAllFilters <- function(library, requiredFilters) {
 
   if (library == "pk" && requiredFilters$administration == "oralBolus")
     return(list(
-      delay = c("noDelay", "lagTime", "transitCompartments"),
-      absorption = c("zeroOrder", "firstOrder", "sigmoid"),
+      delay = c("noDelay", "lagTime"),
+      absorption = c("zeroOrder", "firstOrder", "sigmoid", "transitCompartments"),
       distribution = c("1compartment", "2compartments", "3compartments"),
       elimination = c("linear", "MichaelisMenten", "combined"),
       bioavailability = c("true", "false")
@@ -11,8 +11,8 @@ getAllFilters <- function(library, requiredFilters) {
 
   if (library == "pk" && requiredFilters$administration == "oral")
     return(list(
-      delay = c("noDelay", "lagTime", "transitCompartments"),
-      absorption = c("zeroOrder", "firstOrder", "sigmoid"),
+      delay = c("noDelay", "lagTime"),
+      absorption = c("zeroOrder", "firstOrder", "sigmoid", "transitCompartments"),
       distribution = c("1compartment", "2compartments", "3compartments"),
       elimination = c("linear", "MichaelisMenten", "combined")
     ))
@@ -133,15 +133,15 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
 
 calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
   if (library == "pk") {
-    absorption_delays <- sum(filters$delay %in% c("noDelay", "lagTime")) * max(length(filters$absorption), 1)
-    direct_delays <- sum(filters$delay == "transitCompartments")
-    space <- (absorption_delays + direct_delays) * length(filters$distribution) * length(filters$elimination)
+    absorption_delays <- max(sum(filters$absorption != "transitCompartments"), 1) * length(filters$delay)
+    direct_abs <- sum(filters$absorption == "transitCompartments")
+    space <- (absorption_delays + direct_abs) * length(filters$distribution) * length(filters$elimination)
   }
   if (iiv) {
     if (library == "pk") {
       nb_params <- list(
-        delay = c(0, 1, 3),
-        absorption = c(1, 1, 2),
+        delay = c(0, 1),
+        absorption = c(1, 1, 2, 3),
         distribution = c(1, 3, 5),
         elimination = c(1, 2, 3),
         bioavailability = c(1, 0)
@@ -149,8 +149,8 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
 
       all_models <- expand.grid(filters, stringsAsFactors = FALSE)
 
-      if ("transitCompartments" %in% all_models$delay)
-        all_models[all_models$delay == "transitCompartments", ]$absorption <- NA
+      if ("transitCompartments" %in% all_models$absorption)
+        all_models[all_models$absorption == "transitCompartments", ]$delay <- NA
     }
 
     common_names <- intersect(names(nb_params), names(filters))

@@ -24,9 +24,9 @@ models <- function(p, n_ants, p_err = NULL, p_iiv = NULL) {
 }
 
 postprocessModels <- function(models, library) {
-  if ("absorption" %in% names(models)) {
-    if ("transitCompartments" %in% models$delay)
-      models[models$delay == "transitCompartments", ]$absorption <- NA
+  if ("delay" %in% names(models)) {
+    if ("transitCompartments" %in% models$absorption)
+      models[models$absorption == "transitCompartments", ]$delay <- NA
   }
 
   return(models)

@@ -40,16 +40,16 @@ validate_filters <- function(filters, requiredFilters) {
     stop("Error: 'filters' must be a list with keys from: 'delay', 'absorption', 'distribution', 'elimination', 'bioavailability'.", call. = FALSE)
   }
 
-  delay_values <- c("noDelay", "lagTime", "transitCompartments")
-  absorption_values <- c("zeroOrder", "firstOrder", "sigmoid")
+  delay_values <- c("noDelay", "lagTime")
+  absorption_values <- c("zeroOrder", "firstOrder", "sigmoid", "transitCompartments")
   distribution_values <- c("1compartment", "2compartments", "3compartments")
   elimination_values <- c("linear", "MichaelisMenten", "combined")
 
   if (!is.null(filters$delay) && !all(filters$delay %in% delay_values)) {
-    stop("Error: 'delay' must contain only values 'noDelay', 'lagTime', or 'transitCompartments'.", call. = FALSE)
+    stop("Error: 'delay' must contain only values 'noDelay', or 'lagTime'.", call. = FALSE)
   }
   if (!is.null(filters$absorption) && !all(filters$absorption %in% absorption_values)) {
-    stop("Error: 'absorption' must contain only values 'zeroOrder', 'firstOrder', or 'sigmoid'.", call. = FALSE)
+    stop("Error: 'absorption' must contain only values 'zeroOrder', 'firstOrder', 'sigmoid', or 'transitCompartments'.", call. = FALSE)
   }
   if (!is.null(filters$distribution) && !all(filters$distribution %in% distribution_values)) {
     stop("Error: 'distribution' must contain only values '1compartment', '2compartments', or '3compartments'.", call. = FALSE)
