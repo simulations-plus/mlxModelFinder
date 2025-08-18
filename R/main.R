@@ -147,7 +147,9 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     save_mode = "best",
     keys = keys,
     plot = TRUE,
-    linearization = FALSE
+    linearization = FALSE,
+    elitist = TRUE,
+    max_models = 1000000
   )
 
   # Overwrite defaults with user-provided settings
@@ -164,7 +166,7 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
 
   # --- Algorithm Selection ---
   if (is.null(algorithm)) {
-    if (space > 15000) {
+    if (settings$iiv) {
       algorithm <- "ACO"
     } else {
       algorithm <- "decision_tree"

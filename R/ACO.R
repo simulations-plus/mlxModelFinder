@@ -29,7 +29,9 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     cli::cli_alert_info("Seeding run history with {nrow(settings$previous_runs)} previous results.")
     model_def_cols <- setdiff(colnames(settings$previous_runs), c("metric", "rank"))
 
-    hashes <- apply(settings$previous_runs[, model_def_cols, drop = FALSE], 1, create_model_hash)
+    rows <- split(settings$previous_runs[, model_def_cols, drop = FALSE],
+                  seq_len(nrow(settings$previous_runs)))
+    hashes <- lapply(rows, create_model_hash)
 
     prev_runs_list <- split(settings$previous_runs, seq(nrow(settings$previous_runs)))
     names(prev_runs_list) <- hashes
@@ -91,6 +93,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
       # Check if this exact model has been run before
       if (model_hash %in% names(list_of_runs)) {
+
+        if (model_hash %in% names(prev_runs_list)) {
+          models_tested <- models_tested + 1
+          prev_runs_list[[model_hash]] <- NULL
+        }
+
         iter_results_list[[i]] <- list_of_runs[[model_hash]]
         cli::cli_progress_update()
         next
@@ -148,6 +156,9 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       }, error = function(e) cli::cli_alert_warning("Error when writing model list to a file: File is likely open in Excel"))
     }
 
+    if (settings$elitist && iteration > 1)
+      iter_models <- rbind(iter_models, best_model_info[, colnames(best_model_info) != "rank"])
+
     # Sort the models from the current iteration by performance and rank them
     iter_models <- iter_models[order(iter_models$metric), ]
     iter_models$rank <- 1:nrow(iter_models)
@@ -165,7 +176,10 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     # --- Reporting ---
     cli::cli_alert_info("Total number of models tested so far: {models_tested}")
-    cli::cli_alert_info("Best model found in iteration {iteration}:")
+    if (settings$elitist)
+      cli::cli_alert_info("Best model found so far:")
+    else
+      cli::cli_alert_info("Best model found in iteration {iteration}:")
 
     best_model_info <- iter_models[1, ]
     ulid <- cli::cli_ul()
@@ -183,7 +197,9 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     # Store and plot probability history
     history_list[[iteration + 1]] <- tidyProbabilities(probas_struct, iteration)
-    plotProbabilities(history_list, iteration)
+
+    if (settings$plot)
+      plotProbabilities(history_list, iteration)
 
     # --- Check for Convergence ---
     model_defs_for_check <- iter_models[, setdiff(names(iter_models), c("metric", "rank"))]
@@ -191,6 +207,10 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     if (nrow(row_counts) > 0 && max(row_counts$Freq) > (settings$convergence_threshold * n_ants)) {
       cli::cli_alert_success("Convergence criteria met. More than {settings$convergence_threshold*100}% of ants chose the same model.")
+      break
+    }
+    if (models_tested > settings$max_models) {
+      cli::cli_alert_warning("Maximum number of tested models reached.")
       break
     }
   }
