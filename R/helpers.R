@@ -78,8 +78,8 @@ calculateMetricBICc <- function() {
 
 renameParams <- function(input, library) {
   if (library == "pk") {
-    map <- list(V = "V1", Q = "Q2")
-    input <- ifelse(input %in% names(map), unlist(map[input]), input)
+    map <- c(V = "V1", Q = "Q2")
+    input <- ifelse(input %in% names(map), map[input], input)
   }
   return(input)
 }
