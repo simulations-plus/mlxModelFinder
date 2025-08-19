@@ -200,7 +200,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     history_list[[iteration + 1]] <- tidyProbabilities(probas_struct, iteration)
 
     if (settings$plot)
-      plotProbabilities(history_list, iteration)
+      print(plotProbabilities(history_list))
 
     # Store results per iteration
     iteration_progress[[iteration]] <- cbind(

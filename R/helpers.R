@@ -186,36 +186,84 @@ tidyProbabilities <- function(probas, iteration) {
   return(current_tidy_data)
 }
 
-plotProbabilities <- function(history_list, iteration) {
+plotProbabilities <- function(history_list, ncol = 2, panel_height = 360) {
+  # history_list -> data.frame (base R only)
+  df <- do.call(
+    rbind,
+    lapply(history_list, function(x) as.data.frame(x, stringsAsFactors = FALSE))
+  )
+  if (!nrow(df)) stop("history_list produced an empty data frame.")
+  df <- df[!is.na(df$Meaning), , drop = FALSE]
 
-  plot_data <- do.call(rbind, history_list)
-  plot_data <- subset(plot_data, !is.na(Meaning))
+  # ensure numeric, ordered lines
+  df$Iteration   <- as.numeric(df$Iteration)
+  df$Probability <- as.numeric(df$Probability)
 
-  out <- by(data = plot_data, INDICES = plot_data$Category, FUN = function(p) {
-    p <- droplevels(p)
-    label_data <- subset(p, Iteration == iteration)
-    p <- ggplot(
-      data = p,
-      aes(x = Iteration, y = Probability, group = Meaning)
-    ) +
-      facet_wrap(~Category, ncol = 1) +
-      geom_line(color = "grey60") +
-      geom_point(data = label_data, aes(color = Meaning), size = 3) +
-      scale_y_continuous(limits = c(0, 1)) +
-      scale_x_continuous(
-        limits = c(0, iteration),
-        breaks = seq(0, iteration, 1),
-        minor_breaks = NULL
-      ) +
-      labs(
-        x = "Iteration Number",
-        y = "Probability"
-      ) +
-      theme(legend.position = "bottom", legend.box = "horizontal") +
-      guides(color = guide_legend(nrow = 1))
+  make_one_panel <- function(df_cat, title) {
+    if (length(unique(df_cat$Meaning)) <= 1L) return(NULL)
+
+    p <- plotly::plot_ly(height = panel_height)
+    m_vals <- unique(df_cat$Meaning)
+
+    for (m in m_vals) {
+      sub <- df_cat[df_cat$Meaning == m, , drop = FALSE]
+      sub <- sub[order(sub$Iteration), , drop = FALSE]
+
+      p <- plotly::add_lines(
+        p, data = sub,
+        x = ~Iteration, y = ~Probability,
+        name = m, showlegend = TRUE,
+        hovertemplate = paste0(
+          "Category: ", title, "<br>",
+          "Meaning: ", m, "<br>",
+          "Iteration: %{x}<br>",
+          "Probability: %{y:.2f}<extra></extra>"
+        )
+      )
+    }
+
+    xmax <- max(df_cat$Iteration, na.rm = TRUE)
+    p <- plotly::layout(
+      p,
+      title = list(text = title, x = 0.02),
+      xaxis = list(title = "Iteration Number", rangemode = "tozero", range = c(0, xmax)),
+      yaxis = list(title = "Probability", range = c(0, 1)),
+      legend = list(orientation = "v", x = 1, xanchor = "right", y = 1, yanchor = "top")
+    )
+    plotly::config(p, displaylogo = FALSE, toImageButtonOptions = list(scale = 2))
+  }
+
+  cats <- unique(df$Category)
+  panels <- lapply(cats, function(cat) {
+    make_one_panel(df[df$Category == cat, , drop = FALSE], as.character(cat))
   })
-  grid <- do.call(grid.arrange, c(out, ncol=2))
-  return(grid)
+
+  # drop NULLs (categories with a single series)
+  keep <- !vapply(panels, is.null, logical(1))
+  panels <- panels[keep]
+
+  if (!length(panels)) {
+    return(htmltools::browsable(
+      htmltools::div("No panels to draw (all categories have a single series).")
+    ))
+  }
+
+  # Build a responsive 2-column grid with htmltools
+  grid_children <- lapply(panels, function(p) {
+    htmltools::div(style = sprintf("height:%dpx; padding:4px;", panel_height), p)
+  })
+
+  container <- htmltools::div(
+    style = sprintf("
+      display:grid;
+      grid-template-columns: repeat(%d, minmax(0,1fr));
+      gap: 8px;
+      align-items: start;
+    ", ncol),
+    grid_children
+  )
+
+  return(htmltools::browsable(container))
 }
 
 create_model_hash <- function(df_row) {

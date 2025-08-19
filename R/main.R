@@ -91,9 +91,6 @@
 #'
 #' @importFrom stats aggregate lm optim setNames
 #' @importFrom utils read.csv write.csv
-#' @importFrom ggplot2 ggplot aes geom_line geom_point facet_wrap
-#' @importFrom ggplot2 scale_x_continuous scale_y_continuous
-#' @importFrom ggplot2 labs theme
 #' @importFrom cli cli_alert_success cli_progress_bar
 #' @importFrom cli cli_progress_done cli_progress_update
 #' @importFrom gridExtra grid.arrange
@@ -179,6 +176,13 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     settings$plot <- isTRUE(requireNamespace("DiagrammeR", quietly = TRUE))
     if (!settings$plot)
       warning("Package 'DiagrammeR' is not installed, so the diagram will not be plotted.", call. = FALSE)
+  }
+
+  if (settings$plot && algorithm %in% c("ACO", "tournament")) {
+    settings$plot <- isTRUE(requireNamespace("plotly", quietly = TRUE)) &&
+                     isTRUE(requireNamespace("htmltools", quietly = TRUE))
+    if (!settings$plot)
+      warning("Packages 'plotly' and 'htmltools' is not installed, so the progress will not be plotted.", call. = FALSE)
   }
 
   # --- Selection of Metric Function ---

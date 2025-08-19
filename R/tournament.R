@@ -203,7 +203,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
 
     # Store and plot probability history
     history_list[[iteration + 1]] <- tidyProbabilities(probas_struct, iteration)
-    plotProbabilities(history_list, iteration)
+    plotProbabilities(history_list)
   }
 
   cli::cli_alert_success("Done")
