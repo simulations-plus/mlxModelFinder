@@ -170,18 +170,13 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     cli::cli_alert_info("Algorithm automatically selected: {algorithm}")
   }
 
-  # --- Do not plot diagrams if DiagrammeR not installed ---
-  if (settings$plot && algorithm == "decision_tree") {
-    settings$plot <- isTRUE(requireNamespace("DiagrammeR", quietly = TRUE))
-    if (!settings$plot)
-      warning("Package 'DiagrammeR' is not installed, so the diagram will not be plotted.", call. = FALSE)
+  # --- Do not plot diagrams / progress if packages not installed ---
+  if (isTRUE(settings$plot) && identical(algorithm, "decision_tree")) {
+    settings$plot <- .check_pkgs(c("DiagrammeR", "data.tree"), what = "diagram")
   }
 
-  if (settings$plot && algorithm %in% c("ACO", "tournament")) {
-    settings$plot <- isTRUE(requireNamespace("plotly", quietly = TRUE)) &&
-                     isTRUE(requireNamespace("htmltools", quietly = TRUE))
-    if (!settings$plot)
-      warning("Packages 'plotly' and 'htmltools' is not installed, so the progress will not be plotted.", call. = FALSE)
+  if (isTRUE(settings$plot) && algorithm %in% c("ACO", "tournament")) {
+    settings$plot <- .check_pkgs(c("plotly", "htmltools"), what = "progress")
   }
 
   # --- Selection of Metric Function ---

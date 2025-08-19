@@ -149,3 +149,18 @@ validate_obsidtouse <- function(settings) {
 
   return(TRUE)
 }
+
+.check_pkgs <- function(pkgs, what) {
+  missing <- pkgs[!vapply(pkgs, requireNamespace, logical(1), quietly = TRUE)]
+  if (length(missing)) {
+    pkg_word <- if (length(missing) == 1L) "Package" else "Packages"
+    verb     <- if (length(missing) == 1L) "is" else "are"
+    warning(
+      sprintf("%s %s %s not installed, so the %s will not be plotted.",
+              pkg_word, paste(sprintf("'%s'", missing), collapse = " and "), verb, what),
+      call. = FALSE
+    )
+    return(FALSE)
+  }
+  TRUE
+}
