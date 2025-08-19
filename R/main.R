@@ -148,7 +148,7 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     keys = keys,
     plot = TRUE,
     linearization = FALSE,
-    elitist = TRUE,
+    elitism = TRUE,
     max_models = 1000000
   )
 

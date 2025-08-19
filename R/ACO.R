@@ -23,6 +23,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
   best_metric <- Inf
   list_of_runs <- list()
   history_list <- list(tidyProbabilities(probas_struct, iteration = 0))
+  iteration_progress <- list()
 
   # Pre-populate with previous runs, if provided
   if (!is.null(settings$previous_runs) && nrow(settings$previous_runs) > 0) {
@@ -94,7 +95,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       # Check if this exact model has been run before
       if (model_hash %in% names(list_of_runs)) {
 
-        if (model_hash %in% names(prev_runs_list)) {
+        if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
           models_tested <- models_tested + 1
           prev_runs_list[[model_hash]] <- NULL
         }
@@ -156,7 +157,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       }, error = function(e) cli::cli_alert_warning("Error when writing model list to a file: File is likely open in Excel"))
     }
 
-    if (settings$elitist && iteration > 1)
+    if (settings$elitism && iteration > 1)
       iter_models <- rbind(iter_models, best_model_info[, colnames(best_model_info) != "rank"])
 
     # Sort the models from the current iteration by performance and rank them
@@ -176,7 +177,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     # --- Reporting ---
     cli::cli_alert_info("Total number of models tested so far: {models_tested}")
-    if (settings$elitist)
+    if (settings$elitism)
       cli::cli_alert_info("Best model found so far:")
     else
       cli::cli_alert_info("Best model found in iteration {iteration}:")
@@ -201,6 +202,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     if (settings$plot)
       plotProbabilities(history_list, iteration)
 
+    # Store results per iteration
+    iteration_progress[[iteration]] <- cbind(
+      data.frame(iteration = iteration, models_tested = models_tested),
+      best_model_info
+    )
+
     # --- Check for Convergence ---
     model_defs_for_check <- iter_models[, setdiff(names(iter_models), c("metric", "rank"))]
     row_counts <- as.data.frame(table(do.call(paste, model_defs_for_check)))
@@ -223,6 +230,14 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
   res <- final_results[order(final_results$metric), ]
   res <- res[, colSums(!is.na(res)) > 0]
 
-  return(res)
+  iteration_progress <- do.call(rbind, iteration_progress)
+  rownames(iteration_progress) <- NULL
+  iteration_progress$rank <- NULL
+  iteration_progress <- iteration_progress[, colSums(!is.na(iteration_progress)) > 0]
+
+  return(list(
+    runs = res,
+    iteration_progress = iteration_progress
+  ))
 }
 
