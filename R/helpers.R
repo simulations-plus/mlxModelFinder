@@ -211,7 +211,8 @@ plotProbabilities <- function(history_list, iteration) {
         x = "Iteration Number",
         y = "Probability"
       ) +
-      theme(legend.position = "right")
+      theme(legend.position = "bottom", legend.box = "horizontal") +
+      guides(color = guide_legend(nrow = 1))
   })
   grid <- do.call(grid.arrange, c(out, ncol=2))
   return(grid)
