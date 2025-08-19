@@ -15,9 +15,10 @@ RoxygenNote: 7.3.2
 Depends: R (>= 4.2.0)
 Imports:
     lixoftConnectors,
-	cli,
-	gridExtra,
-	data.tree,
-	Rsmlx
+	cli
 Suggests:
-    testthat
+    htmltools,
+    plotly,
+    testthat,
+	data.tree,
+	DiagrammeR

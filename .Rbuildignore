@@ -1,2 +1,3 @@
 ^mlxModelFinder\.Rproj$
 ^\.Rproj\.user$
+^bench/

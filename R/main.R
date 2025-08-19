@@ -93,7 +93,6 @@
 #' @importFrom utils read.csv write.csv
 #' @importFrom cli cli_alert_success cli_progress_bar
 #' @importFrom cli cli_progress_done cli_progress_update
-#' @importFrom gridExtra grid.arrange
 #'
 #' @export
 findModel <- function(project, library, requiredFilters, filters = NULL,
