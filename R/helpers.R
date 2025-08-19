@@ -122,13 +122,25 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
 
   scenario <- lixoftConnectors::getScenario()
   scenario$tasks <- c(populationParameterEstimation = TRUE,
-                      conditionalDistributionSampling = TRUE,
-                      conditionalModeEstimation = FALSE,
+                      conditionalDistributionSampling = !linearization,
+                      conditionalModeEstimation = linearization,
                       standardErrorEstimation = TRUE,
                       logLikelihoodEstimation = TRUE)
   scenario$linearization <- linearization
   lixoftConnectors::setScenario(scenario)
-  lixoftConnectors::runScenario()
+
+  # Run scenario and handle an annoying error message that does not abort the task
+  abort_msg <- "[ERROR] Error in function boost::math::cdf(const normal_distribution<double>&, double): Random variate x is -nan(ind), but must be finite!"
+
+  withCallingHandlers(
+    lixoftConnectors::runScenario(),
+    message = function(m) {
+      if (grepl(abort_msg, conditionMessage(m), fixed = TRUE)) {
+        lixoftConnectors:::.processRequest("monolix", "abort", list(), "asynchronous")
+        invokeRestart("muffleMessage")
+      }
+    }
+  )
 }
 
 calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
