@@ -205,7 +205,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       if (settings$plot)
         child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
 
-      if (library == "pk") {
+      if (library == "pk" && "absorption" %in% names(current_model_df)) {
         is_special_abs <- current_model_df[, "absorption"] == "transitCompartments"
         if (is_special_abs) current_model_df[is_special_abs, "delay"] <- NA
       }

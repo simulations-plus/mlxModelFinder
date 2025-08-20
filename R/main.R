@@ -125,10 +125,11 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     validate_no_argument_function(initial_func, "initial_func")
 
   # --- Default Settings ---
-  if (requiredFilters$administration %in% c("oral", "oralBolus"))
-    keys <- c("distribution", "absorption_delay", "distribution", "elimination")
-  else
-    keys <- c("delay", "distribution", "elimination")
+  keys <- switch(requiredFilters$administration,
+     "oral" = c("distribution", "absorption_delay", "distribution", "elimination"),
+     "oralBolus" = c("bioavailability", "distribution", "absorption_delay", "distribution", "elimination"),
+     c("distribution", "elimination")
+  )
 
   default_settings <- list(
     N = ifelse(is.null(settings$iiv) || !settings$iiv, 10, 20),
