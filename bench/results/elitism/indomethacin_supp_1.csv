@@ -1,0 +1,8 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tlag","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,17,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"proportional",1e+12
+2,31,"noDelay","zeroOrder","3compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"proportional",1e+12
+3,38,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",1e+12
+4,58,"lagTime","zeroOrder","1compartment","linear",FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,"constant",1e+12
+5,78,"noDelay","zeroOrder","3compartments","linear",FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,FALSE,TRUE,"combined2",1e+12
+6,98,"noDelay","zeroOrder","1compartment","linear",FALSE,FALSE,TRUE,FALSE,FALSE,FALSE,TRUE,FALSE,TRUE,"combined2",1e+12
+7,118,"noDelay","zeroOrder","1compartment","linear",FALSE,FALSE,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,"combined2",1e+12

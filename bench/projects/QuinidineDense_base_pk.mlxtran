@@ -1,0 +1,90 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='Quinidine_PK.csv'}
+delimiter = comma
+header={ID, TIME, DOSE, DV, MDV, SEX, AGE, HT, WT, SYSBP, DIABP, RACE, ETHNIC}
+
+[CONTENT]
+ID = {use=identifier}
+TIME = {use=time}
+DOSE = {use=amount}
+DV = {use=observation, type=continuous}
+MDV = {use=missingdependentvariable}
+SEX = {use=covariate, type=categorical}
+AGE = {use=covariate, type=continuous}
+HT = {use=covariate, type=continuous}
+WT = {use=covariate, type=continuous}
+SYSBP = {use=covariate, type=continuous}
+DIABP = {use=covariate, type=continuous}
+RACE = {use=covariate, type=categorical}
+ETHNIC = {use=covariate, type=categorical}
+
+<MODEL>
+
+[COVARIATE]
+input = {AGE, DIABP, HT, SYSBP, WT, ETHNIC, RACE, SEX}
+
+ETHNIC = {type=categorical, categories={'HISPANIC_OR_LATINO', 'NOT_HISPANIC_OR_LATINO'}}
+RACE = {type=categorical, categories={'AFRICAN_AMERICAN', 'ASIAN', 'WHITE'}}
+SEX = {type=categorical, categories={'F', 'M'}}
+
+[INDIVIDUAL]
+input = {ka_pop, omega_ka, Cl_pop, omega_Cl, Q_pop, omega_Q, V1_pop, omega_V1, V2_pop, Tlag_pop, omega_Tlag}
+
+DEFINITION:
+ka = {distribution=logNormal, typical=ka_pop, sd=omega_ka}
+Cl = {distribution=logNormal, typical=Cl_pop, sd=omega_Cl}
+Q = {distribution=logNormal, typical=Q_pop, sd=omega_Q}
+V1 = {distribution=logNormal, typical=V1_pop, sd=omega_V1}
+V2 = {distribution=logNormal, typical=V2_pop, no-variability}
+Tlag = {distribution=logNormal, typical=Tlag_pop, sd=omega_Tlag}
+
+[LONGITUDINAL]
+input = {a, b}
+
+file = 'lib:oral1_2cpt_TlagkaClV1QV2.txt'
+
+DEFINITION:
+DV = {distribution=normal, prediction=Cc, errorModel=combined2(a, b)}
+
+<FIT>
+data = 'DV'
+model = DV
+
+<PARAMETER>
+Cl_pop = {value=21.5564, method=MLE}
+Q_pop = {value=11.1088, method=MLE}
+Tlag_pop = {value=0.1117, method=MLE}
+V1_pop = {value=157.819, method=MLE}
+V2_pop = {value=81.2166, method=MLE}
+a = {value=0.03983, method=MLE}
+b = {value=0.04477, method=MLE}
+c = {value=1, method=FIXED}
+ka_pop = {value=1.2114, method=MLE}
+omega_Cl = {value=0.2682, method=MLE}
+omega_Q = {value=1.214, method=MLE}
+omega_Tlag = {value=1.3257, method=MLE}
+omega_V1 = {value=0.1711, method=MLE}
+omega_ka = {value=0.5181, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(run = false,method = none )
+fim(method = StochasticApproximation)
+logLikelihood(method = ImportanceSampling)
+
+[PLOTS]
+run = false
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = 'QuinidineDense_base_pk'
+dataandmodelnexttoproject = yes
+
+POPULATION:
+variability = firstStage
+

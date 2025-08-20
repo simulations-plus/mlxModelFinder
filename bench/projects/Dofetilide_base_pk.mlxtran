@@ -1,0 +1,93 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='Dofetilide_PK_deltadeltaQTcF.csv'}
+delimiter = comma
+header={ID, TIME, AMT, DV, OBSID, MDV, BASELINEcent, SEX, AGE, WT, HT, SYSBP, DIABP, RACE, ETHNIC}
+
+[CONTENT]
+ID = {use=identifier}
+TIME = {use=time}
+AMT = {use=amount}
+DV = {use=observation, yname={'conc', 'deltadeltaQTcF'}, type={continuous, continuous}}
+OBSID = {use=observationtype}
+MDV = {use=missingdependentvariable}
+SEX = {use=covariate, type=categorical}
+AGE = {use=covariate, type=continuous}
+WT = {use=covariate, type=continuous}
+HT = {use=covariate, type=continuous}
+SYSBP = {use=covariate, type=continuous}
+DIABP = {use=covariate, type=continuous}
+RACE = {use=covariate, type=categorical}
+ETHNIC = {use=covariate, type=categorical}
+
+[FILTER]
+Dofetilide_PK_deltadeltaQTcF_filtered = {origin='Dofetilide_PK_deltadeltaQTcF.csv', filter={{removeLines='OBSID==deltadeltaQTcF'}}}
+
+[APPLICATION]
+computation=Dofetilide_PK_deltadeltaQTcF_filtered
+
+<MODEL>
+
+[COVARIATE]
+input = {AGE, DIABP, HT, SYSBP, WT, ETHNIC, RACE, SEX}
+
+ETHNIC = {type=categorical, categories={'HISPANIC OR LATINO', 'NOT HISPANIC OR LATINO'}}
+RACE = {type=categorical, categories={'AFRICAN AMERICAN', 'ASIAN', 'WHITE'}}
+SEX = {type=categorical, categories={'F', 'M'}}
+
+[INDIVIDUAL]
+input = {Cl_pop, omega_Cl, ka_pop, omega_ka, Q_pop, V1_pop, omega_V1, V2_pop, Tlag_pop, omega_Tlag}
+
+DEFINITION:
+Cl = {distribution=logNormal, typical=Cl_pop, sd=omega_Cl}
+ka = {distribution=logNormal, typical=ka_pop, sd=omega_ka}
+Q = {distribution=logNormal, typical=Q_pop, no-variability}
+V1 = {distribution=logNormal, typical=V1_pop, sd=omega_V1}
+V2 = {distribution=logNormal, typical=V2_pop, no-variability}
+Tlag = {distribution=logNormal, typical=Tlag_pop, sd=omega_Tlag}
+
+[LONGITUDINAL]
+input = {aconc, bconc}
+
+file = 'lib:oral1_2cpt_TlagkaClV1QV2.txt'
+
+DEFINITION:
+yconc = {distribution=normal, prediction=Cc, errorModel=combined2(aconc, bconc)}
+
+<FIT>
+data = 'conc'
+model = yconc
+
+<PARAMETER>
+Cl_pop = {value=20.154, method=MLE}
+Q_pop = {value=9.1525, method=MLE}
+Tlag_pop = {value=0.3393, method=MLE}
+V1_pop = {value=140.86, method=MLE}
+V2_pop = {value=42.239, method=MLE}
+aconc = {value=0.06149, method=MLE}
+bconc = {value=0.1101, method=MLE}
+cconc = {value=1, method=FIXED}
+ka_pop = {value=1.1406, method=MLE}
+omega_Cl = {value=0.08233, method=MLE}
+omega_Tlag = {value=0.7937, method=MLE}
+omega_V1 = {value=0.08283, method=MLE}
+omega_ka = {value=0.1415, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(method = none )
+fim(method = StochasticApproximation)
+logLikelihood(method = ImportanceSampling)
+
+[PLOTS]
+run = true
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = 'Dofetilide_base_pk'
+dataandmodelnexttoproject = yes
+

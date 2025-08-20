@@ -1,0 +1,9 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tlag","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,18,"lagTime","sigmoid","3compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",237.0874789
+2,31,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,NA,NA,"combined1",168.2617667
+3,32,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,NA,NA,"combined1",168.2617667
+4,52,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,NA,NA,"combined1",159.991869012616
+5,70,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,NA,NA,"combined1",153.100128669523
+6,86,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,NA,NA,"combined1",153.100128669523
+7,95,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,NA,NA,"combined1",151.3189613
+8,103,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,TRUE,NA,NA,"combined1",144.859097096138
