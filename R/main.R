@@ -146,7 +146,8 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     plot = TRUE,
     linearization = FALSE,
     elitism = TRUE,
-    max_models = 1000000
+    max_models = 1000000,
+    iiv_favor_true = FALSE
   )
 
   # Overwrite defaults with user-provided settings

@@ -8,7 +8,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
   # Initialize probabilities for interindividual variability (IIV)
   if (settings$iiv) {
-    probas_iiv <- iiv_probabilities(library)
+    probas_iiv <- iiv_probabilities(library, favor_true = settings$iiv_favor_true)
   }
 
   # Initialize probabilities for error model
@@ -23,6 +23,11 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
   best_metric <- Inf
   list_of_runs <- list()
   history_list <- list(tidyProbabilities(probas_struct, iteration = 0))
+  if (settings$error)
+    history_list[[1]] <- rbind(history_list[[1]], tidyProbabilities(probas_error, iteration))
+  if (settings$iiv)
+    history_list[[1]] <- rbind(history_list[[1]], tidyProbabilities(probas_iiv, iteration))
+
   iteration_progress <- list()
 
   # Pre-populate with previous runs, if provided
@@ -198,6 +203,10 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     # Store and plot probability history
     history_list[[iteration + 1]] <- tidyProbabilities(probas_struct, iteration)
+    if (settings$error)
+      history_list[[iteration + 1]] <- rbind(history_list[[iteration + 1]], tidyProbabilities(probas_error, iteration))
+    if (settings$iiv)
+      history_list[[iteration + 1]] <- rbind(history_list[[iteration + 1]], tidyProbabilities(probas_iiv, iteration))
 
     if (settings$plot)
       print(plotProbabilities(history_list))
