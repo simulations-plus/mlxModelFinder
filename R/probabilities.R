@@ -47,12 +47,51 @@ iiv_probabilities <- function(library, favor_true = FALSE) {
 }
 
 
-updateProbabilities <- function(obj, runs, rho = 0.4) {
+updateProbabilities <- function(obj, runs, rho = 0.4, clip = FALSE,
+                                min_val = 0.05, max_val = 0.95, tol = 1e-3) {
+  # decay previous weights
   obj$weights <- obj$weights * (1 - rho)
+
   keys <- colnames(obj$weights)
-  for (key in keys)
-    for (i in 1:nrow(obj$weights))
-      obj$weights[i, key] <- obj$weights[i, key] + sum(1 / runs[runs[, key] == obj$filters[i, key], "rank"], na.rm = TRUE)
-  obj$probas <- apply(obj$weights, 2, function(x) x/sum(x, na.rm = TRUE))
+  for (key in keys) {
+    for (i in 1:nrow(obj$weights)) {
+      obj$weights[i, key] <- obj$weights[i, key] +
+        sum(1 / runs[runs[, key] == obj$filters[i, key], "rank"], na.rm = TRUE)
+    }
+  }
+
+  # recompute probabilities
+  obj$probas <- apply(obj$weights, 2, function(x) {
+    p <- x / sum(x, na.rm = TRUE)
+    if (clip) {
+      clip_probabilities(p, min_val = min_val, max_val = max_val, tol = tol)
+    } else {
+      p
+    }
+  })
+
   return(obj)
+}
+
+
+clip_probabilities <- function(p, min_val = 0.05, max_val = 0.95, tol = 1e-3) {
+  if (any(p == 1)) return(ifelse(p == 1, 1, 0))
+
+  zero_idx <- which(p == 0)
+  pos_idx  <- which(p > 0 & p < 1)
+
+  if (length(pos_idx) == 0) return(p)
+
+  repeat {
+    p[pos_idx] <- pmin(pmax(p[pos_idx], min_val), max_val)
+
+    scale_factor <- sum(p[pos_idx])
+    if (scale_factor > 0) {
+      p[pos_idx] <- p[pos_idx] / scale_factor
+    }
+
+    if (all(p[pos_idx] >= min_val - tol & p[pos_idx] <= max_val + tol)) break
+  }
+
+  p
 }

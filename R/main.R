@@ -25,6 +25,7 @@
 #'   - rho (ACO/Tournament): Evaporation (learning) rate. Default depends on the search space size.
 #'   - obsIDToUse: Observation ID to use (required if multiple observation IDs).
 #'   - plot: Plot the progress (TRUE/FALSE). Default: TRUE.
+#'   - clip: Clip probabilities (TRUE/FALSE). Default: FALSE.
 #'   - linearization: Should linearization be used for calculation of log-likelihood if the default metric_func is used. Default: FALSE.
 #'   - save_mode: Character string indicating how model runs should be saved during training.
 #'     Must be one of:
@@ -147,7 +148,8 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     linearization = FALSE,
     elitism = TRUE,
     max_models = 1000000,
-    iiv_favor_true = FALSE
+    iiv_favor_true = FALSE,
+    clip = FALSE
   )
 
   # Overwrite defaults with user-provided settings

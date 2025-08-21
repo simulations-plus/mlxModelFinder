@@ -174,12 +174,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     iter_models <- postprocessModels(iter_models)
 
     # --- Update Pheromones (Probabilities) ---
-    probas_struct <- updateProbabilities(probas_struct, iter_models, rho = settings$rho)
+    probas_struct <- updateProbabilities(probas_struct, iter_models, rho = settings$rho, clip = settings$clip)
     if (settings$iiv && iteration > settings$initial_iiv_forced_iter) {
-      probas_iiv <- updateProbabilities(probas_iiv, iter_models, rho = settings$rho)
+      probas_iiv <- updateProbabilities(probas_iiv, iter_models, rho = settings$rho, clip = settings$clip)
     }
     if (settings$error) {
-      probas_error <- updateProbabilities(probas_error, iter_models, rho = settings$rho)
+      probas_error <- updateProbabilities(probas_error, iter_models, rho = settings$rho, clip = settings$clip)
     }
 
     # --- Reporting ---
@@ -196,7 +196,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       if (colname %in% c("rank") || is.na(val)) next
       if (colname == "metric")
         cli::cli_li("{.field {colname}}: {.value {round(val, 2)}}")
-      else if (nchar(colname) < 5)
+      else if (colname %in% colnames(models$iiv))
         cli::cli_li("{.field IIV {colname}}: {.value {val}}")
       else
         cli::cli_li("{.field {colname}}: {.value {val}}")
@@ -247,7 +247,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
   return(list(
     runs = res,
-    iteration_progress = iteration_progress
+    iteration_progress = iteration_progress,
+    prob_history = history_list
   ))
 }
 
