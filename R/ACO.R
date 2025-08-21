@@ -18,6 +18,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
   # --- ACO State Variables ---
   iteration <- 0
+  stagnation_count <- 0
   models_tested <- 0
   n_ants <- settings$N
   best_metric <- Inf
@@ -134,6 +135,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
           lixoftConnectors::saveProject(
             file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
           )
+        stagnation_count <- -1
       }
 
       # Store results
@@ -218,11 +220,10 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     )
 
     # --- Check for Convergence ---
-    model_defs_for_check <- iter_models[, setdiff(names(iter_models), c("metric", "rank"))]
-    row_counts <- as.data.frame(table(do.call(paste, model_defs_for_check)))
+    stagnation_count <- stagnation_count + 1
 
-    if (nrow(row_counts) > 0 && max(row_counts$Freq) > (settings$convergence_threshold * n_ants)) {
-      cli::cli_alert_success("Convergence criteria met. More than {settings$convergence_threshold*100}% of ants chose the same model.")
+    if (stagnation_count >= 8) {
+      cli::cli_alert_success("Convergence criteria met. {stagnation_count} iterations without improvement.")
       break
     }
     if (models_tested > settings$max_models) {
