@@ -514,3 +514,10 @@
 "noDelay","firstOrder","2compartments","linear",TRUE,NA,NA,NA,NA,TRUE,FALSE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",776.306565432086
 "noDelay","zeroOrder","2compartments","linear",NA,TRUE,NA,NA,NA,TRUE,FALSE,TRUE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",778.726546510435
 "noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,NA,NA,TRUE,TRUE,FALSE,FALSE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",799.154636191255
+"lagTime","zeroOrder","2compartments","linear",NA,TRUE,TRUE,NA,NA,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"constant",1236.53142734447
+"noDelay","sigmoid","2compartments","linear",FALSE,TRUE,NA,NA,NA,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"constant",1186.93496235785
+"noDelay","firstOrder","2compartments","linear",TRUE,NA,NA,NA,NA,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"constant",1139.85336106545
+"noDelay","firstOrder","2compartments","linear",FALSE,NA,NA,NA,NA,TRUE,TRUE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",786.049114948009
+"noDelay","zeroOrder","2compartments","linear",NA,FALSE,NA,NA,NA,TRUE,FALSE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",803.270695059718
+"noDelay","firstOrder","2compartments","linear",TRUE,NA,NA,NA,NA,TRUE,FALSE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",769.214992395026
+"noDelay","firstOrder","2compartments","linear",FALSE,NA,NA,NA,NA,TRUE,FALSE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",786.819143109863

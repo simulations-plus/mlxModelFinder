@@ -461,3 +461,15 @@
 "lagTime","sigmoid","2compartments","linear",FALSE,FALSE,FALSE,NA,NA,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",199.023263622639
 "noDelay","sigmoid","2compartments","linear",FALSE,TRUE,NA,NA,NA,TRUE,TRUE,TRUE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",142.784937318317
 "noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,NA,NA,TRUE,TRUE,FALSE,TRUE,TRUE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",172.772298367888
+"lagTime","sigmoid","3compartments","linear",TRUE,TRUE,TRUE,NA,NA,TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",196.968227347933
+"noDelay","sigmoid","3compartments","linear",FALSE,TRUE,NA,NA,NA,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",174.055367193732
+"noDelay","zeroOrder","2compartments","linear",NA,TRUE,NA,NA,NA,TRUE,TRUE,TRUE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",261.498736065923
+"noDelay","sigmoid","2compartments","linear",TRUE,TRUE,NA,NA,NA,TRUE,TRUE,TRUE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",139.384045005149
+"noDelay","sigmoid","2compartments","linear",FALSE,TRUE,NA,NA,NA,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",134.105884567771
+"lagTime","sigmoid","1compartment","linear",TRUE,TRUE,TRUE,NA,NA,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",155.212304259935
+"lagTime","zeroOrder","3compartments","linear",NA,TRUE,TRUE,NA,NA,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",236.410565194592
+"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,FALSE,NA,NA,TRUE,TRUE,TRUE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",162.482652002071
+"lagTime","sigmoid","3compartments","linear",TRUE,FALSE,FALSE,NA,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",192.123341157522
+"lagTime","sigmoid","1compartment","linear",TRUE,TRUE,TRUE,NA,NA,TRUE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",143.418609794643
+"noDelay","sigmoid","3compartments","linear",FALSE,TRUE,NA,NA,NA,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",181.815434296777
+"noDelay","zeroOrder","2compartments","linear",NA,TRUE,NA,NA,NA,FALSE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",244.11423550789
