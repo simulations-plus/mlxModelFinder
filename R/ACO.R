@@ -106,6 +106,13 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
           prev_runs_list[[model_hash]] <- NULL
         }
 
+        metric <- list_of_runs[[model_hash]]$metric
+
+        if (metric < best_metric) {
+          best_metric <- metric
+          stagnation_count <- -1
+        }
+
         iter_results_list[[i]] <- list_of_runs[[model_hash]]
         cli::cli_progress_update()
         next
