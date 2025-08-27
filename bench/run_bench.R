@@ -2,52 +2,117 @@ devtools::load_all()
 
 projects <- list.files("bench/projects/", pattern="\\.mlxtran$", full.names = TRUE)
 
-projects <- projects[2:length(projects)]
-
 seeds <- 1:5
-subdirectory <- "elitism"
-settings <- list(
-  findIIV = TRUE,
-  findError = TRUE,
-  max_models = 100,
-  elitism = TRUE,
-  plot = FALSE
+subdirectories <- c("classic", "clip", "elitism", "elitism_clip", "favor_true", "favor_true_1", "favor_true_0", "favor_true_0_elitism")
+all_settings <- list(
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = FALSE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = FALSE
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = FALSE,
+    plot = FALSE,
+    clip = TRUE,
+    iiv_favor_true = FALSE
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = TRUE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = FALSE
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = TRUE,
+    plot = FALSE,
+    clip = TRUE,
+    iiv_favor_true = FALSE
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = FALSE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = TRUE
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = FALSE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = TRUE,
+    initial_iiv_forced_iter = 1
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = FALSE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = TRUE,
+    initial_iiv_forced_iter = 0
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = TRUE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = TRUE,
+    initial_iiv_forced_iter = 0
+  )
 )
 
 
 results <- NULL
 
-for (project in projects) {
-  for (seed in seeds) {
-    results_file_name <- paste0("bench/run_lists/", tools::file_path_sans_ext(basename(project)), ".csv")
+for (i in 7:8) {
+  subdirectory <- subdirectories[i]
+  settings <- all_settings[[i]]
 
-    message(tools::file_path_sans_ext(basename(project)))
+  for (project in projects) {
+    for (seed in seeds) {
+      results_file_name <- paste0("bench/run_lists/", tools::file_path_sans_ext(basename(project)), ".csv")
 
-    if (file.exists(results_file_name))
-      previous_runs <- results_file_name
-    else
-      previous_runs <- NULL
+      message(tools::file_path_sans_ext(basename(project)))
 
-    default_settings <- list(
-      previous_runs = previous_runs,
-      output = results_file_name,
-      seed = seed
-    )
+      if (file.exists(results_file_name))
+        previous_runs <- results_file_name
+      else
+        previous_runs <- NULL
 
-    res <- findModel(
-      project = project,
-      library = "pk",
-      requiredFilters = list(administration = "oral", parametrization = "clearance"),
-      filters = list(absorption = c("firstOrder", "zeroOrder", "sigmoid"), elimination = "linear"),
-      settings = append(settings, default_settings)
-    )
+      default_settings <- list(
+        previous_runs = previous_runs,
+        output = results_file_name,
+        seed = seed
+      )
 
-    path <- paste0("bench/results/", subdirectory)
+      res <- findModel(
+        project = project,
+        library = "pk",
+        requiredFilters = list(administration = "oral", parametrization = "clearance"),
+        filters = list(absorption = c("firstOrder", "zeroOrder", "sigmoid"), elimination = "linear"),
+        settings = append(settings, default_settings)
+      )
 
-    if (!dir.exists(path)) {
-      dir.create(path, recursive = TRUE)
+      path <- paste0("bench/results/", subdirectory)
+
+      if (!dir.exists(path)) {
+        dir.create(path, recursive = TRUE)
+      }
+
+      write.csv(res$iteration_progress, paste0(path, "/", tools::file_path_sans_ext(basename(project)), "_", seed, ".csv"), row.names = FALSE)
     }
-
-    write.csv(res$iteration_progress, paste0(path, "/", tools::file_path_sans_ext(basename(project)), "_", seed, ".csv"), row.names = FALSE)
   }
 }
