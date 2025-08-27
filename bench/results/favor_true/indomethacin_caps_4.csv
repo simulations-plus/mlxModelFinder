@@ -1,0 +1,15 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tlag","V1","Cl","Q2","V2","error","metric"
+1,18,"lagTime","firstOrder","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",238.3074134
+2,26,"lagTime","zeroOrder","2compartments","linear",NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",183.2995412
+3,29,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"proportional",178.0078463
+4,47,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,"proportional",168.8673652
+5,64,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,FALSE,FALSE,FALSE,"combined1",145.5461203
+6,78,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined1",140.4933383
+7,91,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+8,99,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+9,101,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+10,105,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+11,105,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+12,105,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+13,105,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292
+14,105,"lagTime","sigmoid","2compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",140.5865292

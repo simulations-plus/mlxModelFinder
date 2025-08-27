@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tlag","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,17,"lagTime","zeroOrder","2compartments","linear",NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,NA,NA,"combined1",-82.57391268
+2,36,"lagTime","firstOrder","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,TRUE,FALSE,NA,NA,"combined1",-101.5368664
+3,55,"lagTime","firstOrder","3compartments","linear",TRUE,NA,FALSE,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,"combined1",-90.2594990993317
+4,74,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,NA,NA,"combined2",-129.0411724
+5,90,"lagTime","firstOrder","3compartments","linear",TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,"combined2",-119.431774944989
+6,106,"lagTime","firstOrder","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-116.9205888
+7,119,"lagTime","firstOrder","2compartments","linear",TRUE,NA,TRUE,FALSE,TRUE,FALSE,TRUE,NA,NA,"combined1",-116.9444527
+8,126,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+9,132,"lagTime","firstOrder","2compartments","linear",TRUE,NA,TRUE,FALSE,FALSE,TRUE,TRUE,NA,NA,"combined1",-128.854335
+10,141,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+11,144,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+12,149,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+13,152,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+14,153,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+15,154,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708
+16,155,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,"combined1",-130.6785708

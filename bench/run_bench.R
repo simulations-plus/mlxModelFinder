@@ -77,7 +77,7 @@ all_settings <- list(
 
 results <- NULL
 
-for (i in 7:8) {
+for (i in c(2, 4)) {
   subdirectory <- subdirectories[i]
   settings <- all_settings[[i]]
 

@@ -1,0 +1,10 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","Tk0","V1","Cl","error","metric"
+1,18,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+2,28,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+3,32,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+4,43,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+5,50,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+6,55,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+7,56,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+8,57,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
+9,57,"noDelay","zeroOrder","1compartment","linear",TRUE,TRUE,TRUE,"proportional",9.182983053
