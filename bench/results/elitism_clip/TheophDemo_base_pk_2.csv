@@ -4,7 +4,7 @@
 3,35,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
 4,53,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
 5,63,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
-6,71,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
-7,72,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
-8,72,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
-9,72,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
+6,69,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
+7,73,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
+8,75,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855
+9,79,"lagTime","firstOrder","1compartment","linear",TRUE,TRUE,TRUE,TRUE,"proportional",309.3564855

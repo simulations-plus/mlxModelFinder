@@ -5,10 +5,10 @@
 4,56,"lagTime","zeroOrder","3compartments","linear",TRUE,FALSE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1884.322804
 5,74,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
 6,91,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-7,99,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-8,107,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-9,110,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-10,111,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-11,112,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-12,112,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
-13,113,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+7,101,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+8,111,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+9,120,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+10,127,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+11,132,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+12,134,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511
+13,138,"lagTime","zeroOrder","3compartments","linear",TRUE,TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,TRUE,"combined2",-1891.422511

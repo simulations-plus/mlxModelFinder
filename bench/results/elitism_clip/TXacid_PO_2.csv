@@ -4,10 +4,10 @@
 3,36,"noDelay","firstOrder","1compartment","linear",TRUE,NA,TRUE,TRUE,"constant",924.424356
 4,55,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
 5,65,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-6,73,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-7,76,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-8,77,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-9,78,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-10,78,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-11,78,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
-12,78,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+6,75,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+7,80,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+8,82,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+9,86,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+10,89,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+11,91,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203
+12,94,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203

@@ -2,10 +2,10 @@
 1,18,"lagTime","sigmoid","1compartment","linear",TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",16.91646388
 2,27,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
 3,29,"lagTime","sigmoid","1compartment","linear",TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",16.91646388
-4,48,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
+4,48,"lagTime","sigmoid","1compartment","linear",FALSE,TRUE,TRUE,TRUE,FALSE,"combined1",31.54163858
 5,61,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
-6,74,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
-7,81,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
-8,84,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
-9,85,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
-10,86,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
+6,76,"lagTime","sigmoid","1compartment","linear",TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",16.91646388
+7,82,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined1",12.36013251
+8,89,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
+9,94,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
+10,101,"lagTime","zeroOrder","1compartment","linear",NA,TRUE,TRUE,TRUE,TRUE,"combined2",4.841475461
