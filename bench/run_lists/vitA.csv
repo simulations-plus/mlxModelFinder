@@ -527,3 +527,11 @@
 "lagTime","sigmoid","3compartments","linear",TRUE,TRUE,TRUE,NA,NA,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",154.616261645715
 "noDelay","zeroOrder","1compartment","linear",NA,TRUE,NA,NA,NA,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"proportional",226.674767133093
 "noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,NA,NA,TRUE,FALSE,TRUE,FALSE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",152.597899498185
+"lagTime","sigmoid","3compartments","linear",TRUE,FALSE,TRUE,NA,NA,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined2",209.29790885975
+"noDelay","sigmoid","3compartments","linear",TRUE,FALSE,NA,NA,NA,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"proportional",176.900104396614
+"noDelay","sigmoid","3compartments","linear",FALSE,TRUE,NA,NA,NA,TRUE,TRUE,TRUE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,"proportional",174.617899672916
+"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,NA,NA,TRUE,TRUE,FALSE,TRUE,FALSE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,"proportional",164.959755541088
+"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,FALSE,NA,NA,TRUE,TRUE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,NA,NA,"proportional",2.58195074254486e+30
+"lagTime","sigmoid","3compartments","linear",FALSE,TRUE,FALSE,NA,NA,TRUE,TRUE,FALSE,FALSE,FALSE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",168.329889623802
+"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,NA,NA,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,NA,NA,NA,NA,NA,NA,NA,NA,"constant",255.060844084067
+"noDelay","zeroOrder","3compartments","linear",NA,TRUE,NA,NA,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,NA,NA,NA,NA,NA,NA,NA,NA,"combined1",279.253057857111
