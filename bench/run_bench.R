@@ -3,7 +3,9 @@ devtools::load_all()
 projects <- list.files("bench/projects/", pattern="\\.mlxtran$", full.names = TRUE)
 
 seeds <- 1:5
-subdirectories <- c("classic", "clip", "elitism", "elitism_clip", "favor_true", "favor_true_1", "favor_true_0", "favor_true_0_elitism", "favor_true_1_elitism")
+subdirectories <- c("classic", "clip", "elitism", "elitism_clip", "favor_true",
+                    "favor_true_1", "favor_true_0", "favor_true_0_elitism",
+                    "favor_true_1_elitism", "favor_true_1_nostrong")
 all_settings <- list(
   list(
     findIIV = TRUE,
@@ -80,13 +82,22 @@ all_settings <- list(
     clip = FALSE,
     iiv_favor_true = TRUE,
     initial_iiv_forced_iter = 1
+  ),
+  list(
+    findIIV = TRUE,
+    findError = TRUE,
+    elitism = FALSE,
+    plot = FALSE,
+    clip = FALSE,
+    iiv_favor_true = TRUE,
+    initial_iiv_forced_iter = 1
   )
 )
 
 
 results <- NULL
 
-for (i in c(2, 4, 9)) {
+for (i in c(10)) {
   subdirectory <- subdirectories[i]
   settings <- all_settings[[i]]
 
