@@ -80,7 +80,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       for (i in 1:n_ants) {
         model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
         lixoftConnectors::setStructuralModel(model)
-        param_names <- renameParams(lixoftConnectors::getIndividualParameterModel()$name, library)
+        param_names <- lixoftConnectors::getIndividualParameterModel()$name
         models$iiv[i, !(colnames(models$iiv) %in% param_names)] <- NA
       }
     }

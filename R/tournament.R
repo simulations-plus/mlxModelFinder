@@ -76,7 +76,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
       current_model_df <- as.data.frame(current_model$struct)
 
       if (settings$iiv) {
-        param_names <- renameParams(lixoftConnectors::getIndividualParameterModel()$name, library)
+        param_names <- lixoftConnectors::getIndividualParameterModel()$name
         current_model$iiv[1, !(colnames(current_model$iiv) %in% param_names)] <- NA
         current_model_df <- cbind(current_model_df, as.data.frame(current_model$iiv))
       }

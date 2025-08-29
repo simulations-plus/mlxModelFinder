@@ -15,8 +15,8 @@ probabilities <- function(x, weights_override = NULL) {
 
 iiv_probabilities <- function(library, favor_true = FALSE) {
   if (library == "pk") {
-    param_list <- c("ka", "Tk0", "Tlag", "Ktr", "Mtt",
-                    "V1", "Cl", "Q2", "V2", "Q3", "V3",
+    param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
+                    "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
                     "k", "k12", "k21", "k13", "k31",
                     "Vm", "Km", "F")
     param_map <- lapply(param_list, function(x) c(TRUE, FALSE))

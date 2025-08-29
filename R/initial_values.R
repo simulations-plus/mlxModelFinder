@@ -117,7 +117,7 @@ compute.ini <- function(r, admin, parameter) {
     Tlag_ini <- Tk0_ini/5
     Mtt_ini <- Tlag_ini
     Ktr_ini <- ka_ini*5
-    list.ini <- c(ka=ka_ini, V=V_ini, k=k_ini, Tk0=Tk0_ini, Tlag=Tlag_ini, Mtt=Mtt_ini, Ktr=Ktr_ini)
+    list.ini <- c(ka=ka_ini, V=V_ini, k=k_ini, Tk0=Tk0_ini, Tlag=Tlag_ini, Mtt=Mtt_ini, Ktr=Ktr_ini, Tk0s=Tlag_ini)
   } else {
     rV <- (1 - exp(-k_ini*abs$tinf)) /(abs$tinf*k_ini)
     rV[abs$tinf==0] <- 1

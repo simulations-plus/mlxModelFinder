@@ -77,14 +77,6 @@ calculateMetricBICc <- function() {
   return(BICc)
 }
 
-renameParams <- function(input, library) {
-  if (library == "pk") {
-    map <- c(V = "V1", Q = "Q2")
-    input <- ifelse(input %in% names(map), map[input], input)
-  }
-  return(input)
-}
-
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
                      obsIDToUse = NULL, linearization = FALSE) {
   error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
