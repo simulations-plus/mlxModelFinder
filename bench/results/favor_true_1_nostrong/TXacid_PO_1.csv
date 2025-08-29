@@ -1,0 +1,13 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","V1","Cl","error","metric"
+1,17,"noDelay","firstOrder","1compartment","linear",TRUE,NA,TRUE,TRUE,"combined1",933.9826031
+2,33,"noDelay","firstOrder","1compartment","linear",TRUE,NA,FALSE,FALSE,"constant",909.4444484
+3,51,"noDelay","firstOrder","1compartment","linear",TRUE,NA,FALSE,FALSE,"constant",909.4444484
+4,67,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+5,77,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,TRUE,"constant",909.4421529
+6,85,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+7,93,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+8,96,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+9,97,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+10,99,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+11,99,"noDelay","firstOrder","1compartment","linear",FALSE,NA,FALSE,FALSE,"constant",901.9436203
+12,99,"noDelay","zeroOrder","1compartment","linear",NA,FALSE,FALSE,FALSE,"constant",901.9436203

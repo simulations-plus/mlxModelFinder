@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tlag","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,18,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",-1819.53133
+2,37,"lagTime","sigmoid","3compartments","linear",TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,"combined1",-1814.27053906916
+3,55,"lagTime","sigmoid","3compartments","linear",TRUE,FALSE,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1849.82650305479
+4,71,"lagTime","sigmoid","3compartments","linear",TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,"combined1",-1814.27053906916
+5,88,"lagTime","sigmoid","3compartments","linear",FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,FALSE,"combined2",-1821.715034
+6,103,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,FALSE,TRUE,"combined2",-1824.25196342874
+7,120,"lagTime","sigmoid","3compartments","linear",TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,"combined2",-1831.125211
+8,132,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+9,142,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,FALSE,"combined2",-1834.62044934877
+10,144,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+11,145,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+12,146,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+13,147,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+14,147,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+15,147,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
+16,147,"noDelay","sigmoid","3compartments","linear",TRUE,TRUE,NA,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1852.933725
