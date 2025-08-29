@@ -42,7 +42,6 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     prev_runs_list <- split(settings$previous_runs, seq(nrow(settings$previous_runs)))
     names(prev_runs_list) <- hashes
-    list_of_runs <- prev_runs_list
   }
 
   # --- Main ACO Loop ---
@@ -76,33 +75,40 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     # This list will hold the results for the current iteration
     iter_results_list <- vector("list", n_ants)
 
+    # --- Compile models in a data.frame ---
+    if (settings$iiv) {
+      for (i in 1:n_ants) {
+        model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
+        lixoftConnectors::setStructuralModel(model)
+        param_names <- renameParams(lixoftConnectors::getIndividualParameterModel()$name, library)
+        models$iiv[i, !(colnames(models$iiv) %in% param_names)] <- NA
+      }
+    }
+
+    models_df <- as.data.frame(models$struct)
+
+    if (settings$iiv)
+      models_df <- cbind(models_df, as.data.frame(models$iiv))
+
+    if (settings$error)
+      models_df <- cbind(models_df, data.frame(error = models$error[, "error"]))
+
     # --- Evaluate Models (Ants) ---
     for (i in 1:n_ants) {
 
       model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
-      lixoftConnectors::setStructuralModel(model)
 
-      # Combine the structural, IIV, and error components into a single definition
-      current_model_df <- as.data.frame(models$struct)[i, ]
-
-      if (settings$iiv) {
-        param_names <- renameParams(lixoftConnectors::getIndividualParameterModel()$name, library)
-        models$iiv[i, !(colnames(models$iiv) %in% param_names)] <- NA
-        current_model_df <- cbind(current_model_df, as.data.frame(models$iiv)[i, ])
-      }
-
-      if (settings$error) {
-        current_model_df <- cbind(current_model_df, data.frame(error = models$error[[i, "error"]]))
-      }
+      current_model_df <- models_df[i, ]
 
       # Generate a unique hash for the current model configuration
       model_hash <- create_model_hash(current_model_df)
 
       # Check if this exact model has been run before
-      if (model_hash %in% names(list_of_runs)) {
+      if (model_hash %in% names(list_of_runs) || !is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
 
         if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
           models_tested <- models_tested + 1
+          list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
           prev_runs_list[[model_hash]] <- NULL
         }
 
