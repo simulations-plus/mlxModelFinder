@@ -106,8 +106,10 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   op$cli.progress_show_after = 0
   options(op)
 
-  names(settings)[names(settings) == "findIIV"] <- "iiv"
-  names(settings)[names(settings) == "findError"] <- "error"
+  if (!is.null(settings)) {
+    names(settings)[names(settings) == "findIIV"] <- "iiv"
+    names(settings)[names(settings) == "findError"] <- "error"
+  }
 
   # --- Argument Checks ---
   validate_project(project)
