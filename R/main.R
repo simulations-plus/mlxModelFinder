@@ -151,7 +151,9 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     elitism = TRUE,
     max_models = 1000000,
     iiv_favor_true = FALSE,
-    clip = FALSE
+    clip = FALSE,
+    xgboost = FALSE,
+    local_search = FALSE
   )
 
   # Overwrite defaults with user-provided settings
