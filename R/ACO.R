@@ -163,6 +163,55 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
     }
     cli::cli_progress_done()
 
+    # --- Search with XGBoost if stagnating ---
+    if (settings$xgboost && settings$iiv && stagnation_count == 5) {
+
+    }
+
+    # --- Add global best ---
+    if (settings$elitism && iteration > 1)
+      iter_results_list[[length(iter_results_list) + 1]] <- best_model_info[, colnames(best_model_info) != "rank"]
+
+    # --- Do local IIV search ---
+    if (settings$local_search && settings$iiv && iteration > settings$initial_iiv_forced_iter) {
+      cli::cli_alert_info("Running local IIV search on the best model...")
+
+      min_metric <- min(sapply(iter_results_list, function(x) x$metric))
+      index_best <- which(sapply(iter_results_list, function(x) x$metric == min_metric))[1]
+
+      struct_cols <- colnames(probas_struct$filters)
+      model <- getModelName("pk", filters = append(iter_results_list[[index_best]][, struct_cols], requiredFilters))
+
+      iiv_cols <- colnames(probas_iiv$filters)
+      iiv_params <- iter_results_list[[index_best]][, iiv_cols]
+      error_model <- if (settings$error) iter_results_list[[index_best]][, "error"] else NULL
+
+      if (is.null(settings$previous_runs)) prev_runs_list <- NULL
+
+      res <- runLocalSearch(
+        model = model,
+        model_info = iter_results_list[[index_best]],
+        list_of_runs = list_of_runs,
+        iiv = iiv_params,
+        error = error_model,
+        settings = settings,
+        metric_func = metric_func,
+        prev_runs_list = prev_runs_list
+      )
+
+      list_of_runs <- res$list_of_runs
+      prev_runs_list <- res$prev_runs_list
+      models_tested <- models_tested + res$models_tested
+
+      if (res$best_model_info$metric < min_metric) {
+        best_metric <- res$best_model_info$metric
+        stagnation_count <- -1
+        best_model_info <- res$best_model_info
+      }
+
+      iter_results_list[[index_best]] <- res$best_model_info
+    }
+
     # --- Post-Iteration Processing ---
     # Efficiently combine the list of results into a single data frame
     iter_models <- do.call(rbind, Filter(Negate(is.null), iter_results_list))
@@ -178,9 +227,6 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
         write.csv(full_results_df, file = settings$output, row.names = FALSE)
       }, error = function(e) cli::cli_alert_warning("Error when writing model list to a file: File is likely open in Excel"))
     }
-
-    if (settings$elitism && iteration > 1)
-      iter_models <- rbind(iter_models, best_model_info[, colnames(best_model_info) != "rank"])
 
     # Sort the models from the current iteration by performance and rank them
     iter_models <- iter_models[order(iter_models$metric), ]
