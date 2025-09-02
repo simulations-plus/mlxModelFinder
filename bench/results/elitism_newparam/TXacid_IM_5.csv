@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","V","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,17,"noDelay","zeroOrder","1compartment","linear",NA,TRUE,TRUE,NA,TRUE,NA,NA,NA,NA,"combined2",569.10971456423
+2,29,"noDelay","firstOrder","1compartment","linear",TRUE,NA,TRUE,NA,TRUE,NA,NA,NA,NA,"combined1",558.684613128989
+3,35,"noDelay","firstOrder","1compartment","linear",TRUE,NA,TRUE,NA,TRUE,NA,NA,NA,NA,"combined1",558.684613128989
+4,53,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"combined2",541.765896011172
+5,67,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"combined2",541.765896011172
+6,83,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,"proportional",527.877742425411
+7,93,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,FALSE,"proportional",527.877742425411
+8,103,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+9,109,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+10,111,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+11,112,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+12,113,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+13,113,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+14,113,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+15,113,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799
+16,113,"noDelay","firstOrder","3compartments","linear",FALSE,NA,NA,FALSE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",522.411471616799

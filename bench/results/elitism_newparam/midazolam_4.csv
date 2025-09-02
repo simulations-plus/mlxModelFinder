@@ -1,0 +1,16 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tk0s","Tlag","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,16,"lagTime","firstOrder","3compartments","linear",TRUE,NA,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",-1830.613892
+2,29,"lagTime","firstOrder","3compartments","linear",TRUE,NA,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",-1830.613892
+3,35,"lagTime","firstOrder","3compartments","linear",TRUE,NA,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",-1830.613892
+4,53,"lagTime","sigmoid","3compartments","linear",FALSE,NA,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1839.46186524429
+5,71,"lagTime","sigmoid","3compartments","linear",FALSE,NA,TRUE,FALSE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1839.46186524429
+6,89,"lagTime","sigmoid","3compartments","linear",TRUE,NA,TRUE,FALSE,FALSE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",-1857.5716674099
+7,105,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+8,117,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+9,123,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+10,130,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+11,132,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+12,132,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+13,132,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+14,133,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
+15,133,"lagTime","zeroOrder","3compartments","linear",NA,TRUE,NA,TRUE,FALSE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-1870.507745
