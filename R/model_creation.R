@@ -104,11 +104,20 @@ getModelName <- function(library, filters = list()) {
   }
 
   if (library == "pk") {
-    updates <- list(
-      pk_lines = "compartment(cmt=1, volume=V, concentration=Cc)",
-      input_params = "V",
-      output_params = "Cc"
-    )
+    if (clean_filters$distribution == "1compartment") {
+      updates <- list(
+        pk_lines = "compartment(cmt=1, volume=V, concentration=Cc)",
+        input_params = "V",
+        output_params = "Cc"
+      )
+    } else {
+      updates <- list(
+        pk_lines = "compartment(cmt=1, volume=V1, concentration=Cc)",
+        input_params = "V1",
+        output_params = "Cc"
+      )
+    }
+
 
     admin_updates <- .handle_administration(clean_filters)
 
@@ -254,10 +263,10 @@ getModelName <- function(library, filters = list()) {
   param <- filters$parametrization
 
   if (dist == "2compartments") {
-    if (param == "clearance") updates <- list(pk_lines = "peripheral(k12=Q/V, k21=Q/V2)", input_params = c("Q", "V2"))
+    if (param == "clearance") updates <- list(pk_lines = "peripheral(k12=Q/V1, k21=Q/V2)", input_params = c("Q", "V2"))
     else updates <- list(pk_lines = "peripheral(k12, k21)", input_params = c("k12", "k21"))
   } else if (dist == "3compartments") {
-    if (param == "clearance") updates <- list(pk_lines = c("peripheral(k12=Q2/V, k21=Q2/V2)", "peripheral(k13=Q3/V, k31=Q3/V3)"), input_params = c("Q2", "V2", "Q3", "V3"))
+    if (param == "clearance") updates <- list(pk_lines = c("peripheral(k12=Q2/V1, k21=Q2/V2)", "peripheral(k13=Q3/V1, k31=Q3/V3)"), input_params = c("Q2", "V2", "Q3", "V3"))
     else updates <- list(pk_lines = c("peripheral(k12, k21)", "peripheral(k13, k31)"), input_params = c("k12", "k21", "k13", "k31"))
   }
   return(updates)
@@ -268,10 +277,14 @@ getModelName <- function(library, filters = list()) {
   updates <- list(pk_lines = NULL, input_params = NULL)
   elim <- filters$elimination
   param <- filters$parametrization
+  dist <- filters$distribution
 
   if (elim %in% c("linear", "combined")) {
     if (param == "clearance") {
-      updates$pk_lines <- c(updates$pk_lines, "elimination(cmt=1, k=Cl/V)")
+      if (dist == "1compartment")
+        updates$pk_lines <- c(updates$pk_lines, "elimination(cmt=1, k=Cl/V)")
+      else
+        updates$pk_lines <- c(updates$pk_lines, "elimination(cmt=1, k=Cl/V1)")
       updates$input_params <- c(updates$input_params, "Cl")
     } else {
       updates$pk_lines <- c(updates$pk_lines, "elimination(cmt=1, k)")

@@ -29,8 +29,8 @@ iiv_probabilities <- function(library, favor_true = FALSE) {
     return(probabilities(param_map))
   }
 
-  strong_true  <- c("Cl", "k", "V1")  # TRUE:FALSE = 9:1
-  medium_true  <- c("ka", "Tk0", "Tlag")          # TRUE:FALSE = 3:1
+  strong_true  <- c("Cl", "k", "V")  # TRUE:FALSE = 9:1
+  medium_true  <- c("ka", "Tk0", "Tlag", "Tk0s")          # TRUE:FALSE = 3:1
 
   weight_map <- lapply(names(param_map), function(p) {
     if (p %in% strong_true) {
