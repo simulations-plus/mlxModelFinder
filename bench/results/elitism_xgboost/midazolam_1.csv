@@ -1,0 +1,15 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","Tk0","Tlag","V1","Cl","Q2","V2","Q3","V3","error","metric"
+1,20,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","combined2",-1858.041635
+2,30,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","combined2",-1858.041635
+3,35,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","combined2",-1858.041635
+4,55,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","combined2",-1858.041635
+5,75,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","TRUE","combined2",-1858.041635
+6,91,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+7,104,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+8,113,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+9,118,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+10,120,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+11,120,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+12,123,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+13,123,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511
+14,123,"lagTime","zeroOrder","3compartments","linear","TRUE","TRUE","FALSE","TRUE","FALSE","TRUE","TRUE","TRUE","combined2",-1891.422511

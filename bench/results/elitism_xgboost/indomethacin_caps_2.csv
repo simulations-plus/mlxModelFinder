@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tk0s","Tlag","V1","Cl","Q","V2","error","metric"
+1,19,"lagTime","zeroOrder","2compartments","linear",NA,TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",183.299541200062
+2,31,"lagTime","sigmoid","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"proportional",178.007846268498
+3,38,"lagTime","sigmoid","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"proportional",178.007846268498
+4,57,"lagTime","sigmoid","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"proportional",178.007846268498
+5,76,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",155.494696885435
+6,93,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,TRUE,"proportional",155.494696885435
+7,107,"lagTime","sigmoid","2compartments","linear",TRUE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"proportional",152.137933036559
+8,115,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+9,119,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+10,123,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+11,124,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+12,124,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+13,127,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+14,127,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+15,127,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537
+16,127,"lagTime","sigmoid","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,FALSE,TRUE,FALSE,"combined2",140.747400824537

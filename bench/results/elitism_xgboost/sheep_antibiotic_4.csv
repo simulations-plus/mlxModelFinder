@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","V","V1","Cl","Q","V2","error","metric"
+1,16,"noDelay","zeroOrder","1compartment","linear",NA,"TRUE","TRUE",NA,"TRUE",NA,NA,"combined1",784.763811378684
+2,25,"noDelay","firstOrder","1compartment","linear","TRUE",NA,"TRUE",NA,"TRUE",NA,NA,"combined1",771.76118544605
+3,28,"noDelay","firstOrder","1compartment","linear","TRUE",NA,"TRUE",NA,"TRUE",NA,NA,"combined1",771.76118544605
+4,42,"noDelay","firstOrder","1compartment","linear","TRUE",NA,"TRUE",NA,"TRUE",NA,NA,"combined1",771.76118544605
+5,47,"noDelay","firstOrder","1compartment","linear","TRUE",NA,"TRUE",NA,"TRUE",NA,NA,"combined1",771.76118544605
+6,48,"noDelay","firstOrder","1compartment","linear","TRUE",NA,"TRUE",NA,"TRUE",NA,NA,"combined1",771.76118544605
+7,49,"noDelay","firstOrder","1compartment","linear","TRUE",NA,"TRUE",NA,"TRUE",NA,NA,"combined1",771.76118544605
+8,50,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+9,51,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+10,53,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+11,55,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+12,55,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+13,55,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+14,56,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+15,56,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
+16,56,"noDelay","firstOrder","2compartments","linear","TRUE",NA,NA,"TRUE","FALSE","TRUE","FALSE","combined1",766.105936531785
