@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0s","Tlag","V1","Cl","Q","V2","error","metric"
+1,17,"noDelay","sigmoid","2compartments","linear",TRUE,TRUE,NA,TRUE,TRUE,TRUE,TRUE,"combined2",-288.494927627965
+2,28,"noDelay","sigmoid","2compartments","linear",TRUE,TRUE,NA,TRUE,TRUE,TRUE,TRUE,"combined2",-288.494927627965
+3,37,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",-304.336656795508
+4,56,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",-304.336656795508
+5,76,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-324.450017761884
+6,94,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-324.450017761884
+7,109,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-324.450017761884
+8,124,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+9,136,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+10,144,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+11,149,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+12,154,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+13,158,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+14,159,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+15,160,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753
+16,162,"lagTime","sigmoid","2compartments","linear",TRUE,TRUE,TRUE,TRUE,FALSE,TRUE,TRUE,"proportional",-325.270058106753

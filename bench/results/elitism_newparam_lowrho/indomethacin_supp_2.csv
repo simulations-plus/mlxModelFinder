@@ -1,0 +1,17 @@
+"iteration","models_tested","delay","absorption","distribution","elimination","ka","Tk0","Tlag","V1","Cl","Q","V2","error","metric"
+1,19,"lagTime","zeroOrder","2compartments","linear",NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",-84.0292094755425
+2,29,"lagTime","zeroOrder","2compartments","linear",NA,TRUE,TRUE,TRUE,TRUE,TRUE,TRUE,"combined2",-84.0292094755425
+3,37,"lagTime","firstOrder","2compartments","linear",TRUE,NA,TRUE,TRUE,TRUE,TRUE,TRUE,"combined1",-97.6412139914797
+4,57,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,FALSE,TRUE,TRUE,TRUE,"combined1",-114.043041493086
+5,76,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,TRUE,TRUE,FALSE,"combined2",-117.416948405125
+6,94,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-129.041172360592
+7,108,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined2",-129.041172360592
+8,123,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+9,132,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+10,137,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+11,144,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+12,149,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+13,151,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+14,151,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+15,151,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
+16,151,"lagTime","firstOrder","2compartments","linear",FALSE,NA,TRUE,TRUE,FALSE,TRUE,TRUE,"combined1",-129.737433905298
