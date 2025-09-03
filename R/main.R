@@ -184,7 +184,11 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   }
 
   if (isTRUE(settings$plot) && algorithm %in% c("ACO", "tournament")) {
-    settings$plot <- .check_pkgs(c("plotly", "htmltools"), what = "progress")
+    settings$plot <- .check_pkgs(c("plotly", "htmltools"), what = "progress plots")
+  }
+
+  if (isTRUE(settings$xgboost) && algorithm %in% c("ACO", "tournament")) {
+    settings$xgboost <- .check_pkgs(c("xgboost"), what = "XGBoost")
   }
 
   # --- Selection of Metric Function ---

@@ -156,7 +156,7 @@ validate_obsidtouse <- function(settings) {
     pkg_word <- if (length(missing) == 1L) "Package" else "Packages"
     verb     <- if (length(missing) == 1L) "is" else "are"
     warning(
-      sprintf("%s %s %s not installed, so the %s will not be plotted.",
+      sprintf("%s %s %s not installed, so the %s will not be used.",
               pkg_word, paste(sprintf("'%s'", missing), collapse = " and "), verb, what),
       call. = FALSE
     )

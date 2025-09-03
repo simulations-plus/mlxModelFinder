@@ -5,10 +5,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
   # Initialize probabilities for the structural model components
   probas_struct <- probabilities(filters)
+  struct_cols <- colnames(probas_struct$filters)
 
   # Initialize probabilities for interindividual variability (IIV)
   if (settings$iiv) {
     probas_iiv <- iiv_probabilities(library, favor_true = settings$iiv_favor_true)
+    iiv_cols <- colnames(probas_iiv$filters)
   }
 
   # Initialize probabilities for error model
@@ -165,7 +167,58 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
     # --- Search with XGBoost if stagnating ---
     if (settings$xgboost && settings$iiv && stagnation_count == 5) {
+      cli::cli_alert_info("Trying to find a good model using XGBoost...")
 
+      list_of_runs_df <- do.call(rbind, list_of_runs)
+      rownames(list_of_runs_df) <- NULL
+      runs <- train_xgb_and_propose(
+        list_of_runs = list_of_runs_df,
+        probas_struct = probas_struct,
+        probas_iiv = probas_iiv,
+        probas_error = probas_error,
+        N = 5,
+        requiredFilters = requiredFilters
+      )
+
+      for (i in 1:nrow(runs)) {
+        current_model_df <- runs[i, ]
+        current_model_df$pred_metric <- NULL
+        iiv_params <- runs[i, iiv_cols]
+        error_model <- if (settings$error) runs[i, "error"] else NULL
+
+        model <- getModelName("pk", filters = append(runs[i, struct_cols], requiredFilters))
+
+        runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+
+        models_tested <- models_tested + 1
+
+        # Calculate the performance metric
+        metric <- metric_func()
+
+        if (settings$save_mode == "all")
+          lixoftConnectors::saveProject(file.path(
+            settings$result_folder,
+            "autoBuild",
+            paste0("run_", models_tested, ".mlxtran")
+          ))
+
+        if (metric < best_metric) {
+          best_metric <- metric
+          if (settings$save_mode == "best")
+            lixoftConnectors::saveProject(
+              file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+            )
+          stagnation_count <- -1
+        }
+
+        # Store results
+        model_info <- current_model_df
+        model_info$metric <- metric
+
+        # Add the new result to the main history and the current iteration's list
+        list_of_runs[[model_hash]] <- model_info
+        iter_results_list[[length(iter_results_list) + 1]] <- model_info
+      }
     }
 
     # --- Add global best ---
@@ -179,10 +232,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       min_metric <- min(sapply(iter_results_list, function(x) x$metric))
       index_best <- which(sapply(iter_results_list, function(x) x$metric == min_metric))[1]
 
-      struct_cols <- colnames(probas_struct$filters)
       model <- getModelName("pk", filters = append(iter_results_list[[index_best]][, struct_cols], requiredFilters))
 
-      iiv_cols <- colnames(probas_iiv$filters)
       iiv_params <- iter_results_list[[index_best]][, iiv_cols]
       error_model <- if (settings$error) iter_results_list[[index_best]][, "error"] else NULL
 
