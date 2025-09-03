@@ -125,17 +125,42 @@ build_candidates <- function(probas_list, runs_df, target_cols, max_combos) {
   filters_df <- as.data.frame(probas_list$filters)
 
   choices_list <- lapply(target_cols, function(col) {
-    col_vals <- filters_df[[col]]
-    allow_any <- any(is.na(col_vals))
-    unique_vals <- unique(col_vals[!is.na(col_vals)])
+    # Values observed in training for this feature (including NA)
+    seen_raw <- as.character(runs_df[[col]])
+    seen_non_na <- unique(seen_raw[!is.na(seen_raw)])
 
-    if (length(unique_vals) == 0 || allow_any) {
-      return(unique(runs_df[[col]]))
+    # If training never had a non-NA value, keep a single NA choice
+    if (length(seen_non_na) == 0L) {
+      allowed <- NA_character_
     } else {
-      return(unique_vals)
+      allowed <- seen_non_na
     }
+
+    # What filters requested
+    req_raw <- as.character(filters_df[[col]])
+    allow_any <- any(is.na(req_raw))
+    requested <- unique(req_raw[!is.na(req_raw)])
+
+    # Apply restriction but never return 0-length
+    vals <- if (length(requested) == 0L || allow_any) {
+      allowed
+    } else {
+      inter <- intersect(requested, allowed)
+      if (length(inter) == 0L) {
+        # no overlap with training → use training-seen values
+        allowed
+      } else {
+        inter
+      }
+    }
+
+    # Final guard: if still empty (paranoia), use NA
+    if (length(vals) == 0L) NA_character_ else vals
   })
   names(choices_list) <- target_cols
+
+  # Sanity: ensure no 0-lengths
+  stopifnot(all(sapply(choices_list, length) > 0L))
 
   build_per_column_grid(choices_list, max_combos, length(target_cols))
 }

@@ -1,7 +1,7 @@
 #' Run Model Selection
 #'
 #' @param project (required) Path to the Monolix project with the loaded data set (SAEM settings, seed will be taken from the project).
-#' @param library (required) The model library to use. Options: "pk", "tmdd", "pkpd".
+#' @param library (required) The model library to use. Options: "pk" (for now).
 #' @param filters (optional) A list defining the structural model components to explore. For the "pk" library, the options are:
 #' \itemize{
 #'   \item \strong{delay}: "noDelay", "lagTime"
@@ -153,6 +153,7 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     iiv_favor_true = FALSE,
     clip = FALSE,
     xgboost = FALSE,
+    xgboost_model_nb = 5,
     local_search = FALSE
   )
 

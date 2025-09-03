@@ -20,7 +20,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
   # --- ACO State Variables ---
   iteration <- 0
-  stagnation_count <- 0
+  stagnation_count <- -1
   models_tested <- 0
   n_ants <- settings$N
   best_metric <- Inf
@@ -176,7 +176,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
         probas_struct = probas_struct,
         probas_iiv = probas_iiv,
         probas_error = probas_error,
-        N = 5,
+        N = settings$xgboost_model_nb,
         requiredFilters = requiredFilters
       )
 
@@ -187,6 +187,23 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
         error_model <- if (settings$error) runs[i, "error"] else NULL
 
         model <- getModelName("pk", filters = append(runs[i, struct_cols], requiredFilters))
+
+        model_hash <- create_model_hash(current_model_df)
+
+        if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+          list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
+          prev_runs_list[[model_hash]] <- NULL
+
+          metric <- list_of_runs[[model_hash]]$metric
+          iter_results_list[[length(iter_results_list) + 1]] <- list_of_runs[[model_hash]]
+
+          if (metric < best_metric) {
+            best_metric <- metric
+            stagnation_count <- -1
+          }
+
+          next
+        }
 
         runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
 
