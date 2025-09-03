@@ -182,7 +182,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
 
       for (i in 1:nrow(runs)) {
         current_model_df <- runs[i, ]
-        current_model_df$pred_metric <- NULL
+        current_model_df$pred_score <- NULL
         iiv_params <- runs[i, iiv_cols]
         error_model <- if (settings$error) runs[i, "error"] else NULL
 

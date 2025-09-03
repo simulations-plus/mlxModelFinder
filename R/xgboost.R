@@ -249,20 +249,26 @@ train_xgb_and_propose <- function(
   formula <- as.formula(paste("~", paste(valid_feature_cols, collapse = " + "), "- 1"))
 
   X_train <- model.matrix(formula, data = runs_encoded)
-  y_train <- list_of_runs[[metric_col]]
+
+  y_train_raw <- list_of_runs[[metric_col]]
+  y_rank <- -y_train_raw
 
   xgb_params <- list(
-    objective = "reg:squarederror", max_depth = 6, eta = 0.05,
+    objective = "rank:pairwise", max_depth = 6, eta = 0.05,
     subsample = 0.8, colsample_bytree = 0.8, min_child_weight = 1
   )
 
-  dtrain <- xgboost::xgb.DMatrix(data = X_train, label = y_train)
-  cv <- xgboost::xgb.cv(
-    params = xgb_params, data = dtrain, nrounds = 1000, nfold = 5,
-    metrics = "rmse", early_stopping_rounds = 50, verbose = 0
-  )
+  dtrain <- xgboost::xgb.DMatrix(data = X_train, label = y_rank)
+  xgboost::setinfo(dtrain, "group", nrow(X_train))
 
-  best_nrounds <- if (!is.null(cv$best_iteration)) cv$best_iteration else 200
+  # cv <- xgboost::xgb.cv(
+  #   params = xgb_params, data = dtrain, nrounds = 1000, nfold = 5,
+  #   metrics = "rmse", early_stopping_rounds = 50, verbose = 0
+  # )
+  #
+  # best_nrounds <- if (!is.null(cv$best_iteration)) cv$best_iteration else 200
+
+  best_nrounds <- 300L
   model <- xgboost::xgb.train(params = xgb_params, data = dtrain, nrounds = best_nrounds, verbose = 0)
 
   # --- 3. GENERATE OR SELECT CANDIDATE MODELS ---
@@ -355,8 +361,8 @@ train_xgb_and_propose <- function(
   }
   X_cand <- X_cand[, colnames(X_train), drop = FALSE]
 
-  candidates$pred_metric <- predict(model, newdata = X_cand)
-  ordered_candidates <- candidates[order(candidates$pred_metric), ]
+  candidates$pred_score <- predict(model, newdata = X_cand)
+  ordered_candidates <- candidates[order(-candidates$pred_score), ]
 
   top_n_count <- min(N, nrow(ordered_candidates))
   top_results <- ordered_candidates[seq_len(top_n_count), , drop = FALSE]
