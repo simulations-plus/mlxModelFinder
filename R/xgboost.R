@@ -1,28 +1,3 @@
-#' (Placeholder) Build a Grid of Combinations from a List of Choices
-#'
-#' @description
-#' This is a placeholder for the user-provided `build_per_column_grid` function
-#' to ensure the script is runnable. It creates all combinations and samples
-#' them if the total exceeds a specified maximum.
-#'
-#' @param choices_list A named list where each element is a vector of choices.
-#' @param max_combos The maximum number of combinations to return.
-#' @param n_cols The number of columns (unused, kept for compatibility).
-#' @return A data.frame of combinations.
-
-build_per_column_grid <- function(choices_list, max_combos, n_cols) {
-  # expand.grid creates a data frame from all combinations of the supplied vectors
-  full_grid <- expand.grid(choices_list, stringsAsFactors = FALSE)
-
-  if (is.finite(max_combos) && nrow(full_grid) > max_combos) {
-    # If the grid is too large, take a random sample
-    sampled_indices <- sample.int(nrow(full_grid), size = max_combos)
-    full_grid <- full_grid[sampled_indices, , drop = FALSE]
-  }
-  return(full_grid)
-}
-
-
 #' Apply Model-Specific Applicability Rules (Vectorized)
 #'
 #' @description
@@ -112,6 +87,30 @@ make_applicable <- function(struct_features, param_df, param_cols, requiredFilte
   return(params_out[, param_cols, drop = FALSE])
 }
 
+
+#' (Placeholder) Build a Grid of Combinations from a List of Choices
+#'
+#' @description
+#' This is a placeholder for the user-provided `build_per_column_grid` function
+#' to ensure the script is runnable. It creates all combinations and samples
+#' them if the total exceeds a specified maximum.
+#'
+#' @param choices_list A named list where each element is a vector of choices.
+#' @param max_combos The maximum number of combinations to return.
+#' @param n_cols The number of columns (unused, kept for compatibility).
+#' @return A data.frame of combinations.
+
+build_per_column_grid <- function(choices_list, max_combos, n_cols) {
+  # expand.grid creates a data frame from all combinations of the supplied vectors
+  full_grid <- expand.grid(choices_list, stringsAsFactors = FALSE)
+
+  if (is.finite(max_combos) && nrow(full_grid) > max_combos) {
+    # If the grid is too large, take a random sample
+    sampled_indices <- sample.int(nrow(full_grid), size = max_combos)
+    full_grid <- full_grid[sampled_indices, , drop = FALSE]
+  }
+  return(full_grid)
+}
 
 #' Generate a Grid of Candidate Model Features
 #'
