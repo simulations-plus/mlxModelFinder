@@ -187,13 +187,9 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
       setNames(df$level, as.character(df[[feat]]))
     }, nb_params[common_names], common_names, SIMPLIFY = FALSE)
 
-    print(param_maps)
-
     param_values <- mapply(function(column_data, map) {
       unname(map[as.character(column_data)])
     }, all_models[common_names], param_maps, SIMPLIFY = FALSE)
-
-    print(param_values)
 
     all_models$total_params <- rowSums(as.data.frame(param_values), na.rm = TRUE)
 
