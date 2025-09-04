@@ -1,0 +1,71 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='glucose_insulin_alcohol.csv'}
+delimiter = comma
+header={ID, TIME, OCC, Y, YTYPE, CENS, AMT}
+
+[CONTENT]
+ID = {use=identifier}
+TIME = {use=time}
+OCC = {use=occasion}
+Y = {use=observation, yname={'1', '2', '3'}, type={continuous, continuous, continuous}}
+YTYPE = {use=observationtype}
+CENS = {use=censored}
+AMT = {use=amount}
+
+[FILTER]
+glucose_insulin_alcohol_filtered = {origin='glucose_insulin_alcohol.csv', filter={{selectLines='YTYPE==1'}}}
+glucose_insulin_alcohol_filtered__1 = {origin='glucose_insulin_alcohol.csv', filter={{removeLines='YTYPE==2'}}}
+glucose_insulin_alcohol_filtered__1_filtered = {origin=glucose_insulin_alcohol_filtered__1, filter={{removeLines='YTYPE==3'}}}
+
+[APPLICATION]
+computation=glucose_insulin_alcohol_filtered__1_filtered
+
+<MODEL>
+
+[INDIVIDUAL]
+input = {Cl_pop, omega_Cl, V_pop, omega_V}
+
+DEFINITION:
+Cl = {distribution=logNormal, typical=Cl_pop, sd=omega_Cl}
+V = {distribution=logNormal, typical=V_pop, sd=omega_V}
+
+[LONGITUDINAL]
+input = {a1, b1}
+
+file = 'lib:bolus_1cpt_VCl.txt'
+
+DEFINITION:
+y1 = {distribution=normal, prediction=Cc, errorModel=combined1(a1, b1)}
+
+<FIT>
+data = '1'
+model = y1
+
+<PARAMETER>
+Cl_pop = {value=0.5, method=MLE}
+V_pop = {value=1, method=MLE}
+a1 = {value=1, method=MLE}
+b1 = {value=0.3, method=MLE}
+c1 = {value=1, method=FIXED}
+omega_Cl = {value=1, method=MLE}
+omega_V = {value=1, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(method = {conditionalMean, conditionalMode })
+fim(run = false,method = StochasticApproximation)
+logLikelihood(run = false,method = ImportanceSampling)
+
+[PLOTS]
+run = true
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = 'alcohol'
+dataandmodelnexttoproject = yes
+

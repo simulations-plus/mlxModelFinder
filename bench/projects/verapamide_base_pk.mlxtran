@@ -1,0 +1,87 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='verapamilHCL_PK.csv'}
+delimiter = comma
+header={RANDID, SEX, AGE, HGHT, WGHT, SYSBP, DIABP, RACE, ETHNIC, EXDOSE_mg, TPT, PCSTRESN_ngmL}
+
+[CONTENT]
+RANDID = {use=identifier}
+SEX = {use=covariate, type=categorical}
+AGE = {use=covariate, type=continuous}
+HGHT = {use=covariate, type=continuous}
+WGHT = {use=covariate, type=continuous}
+SYSBP = {use=covariate, type=continuous}
+DIABP = {use=covariate, type=continuous}
+RACE = {use=covariate, type=categorical}
+EXDOSE_mg = {use=amount}
+TPT = {use=time}
+PCSTRESN_ngmL = {use=observation, type=continuous}
+
+<MODEL>
+
+[COVARIATE]
+input = {AGE, DIABP, HGHT, SYSBP, WGHT, RACE, SEX}
+
+RACE = {type=categorical, categories={'AFRICANAMERICAN', 'ASIAN', 'WHITE'}}
+SEX = {type=categorical, categories={'F', 'M'}}
+
+[INDIVIDUAL]
+input = {Q_pop, omega_Q, V1_pop, omega_V1, V2_pop, omega_V2, ka_pop, Cl_pop, omega_Cl, Tlag_pop, omega_Tlag, omega_ka}
+
+DEFINITION:
+Q = {distribution=logNormal, typical=Q_pop, sd=omega_Q}
+V1 = {distribution=logNormal, typical=V1_pop, sd=omega_V1}
+V2 = {distribution=logNormal, typical=V2_pop, sd=omega_V2}
+ka = {distribution=logNormal, typical=ka_pop, sd=omega_ka}
+Cl = {distribution=logNormal, typical=Cl_pop, sd=omega_Cl}
+Tlag = {distribution=logNormal, typical=Tlag_pop, sd=omega_Tlag}
+
+[LONGITUDINAL]
+input = {b}
+
+file = 'lib:oral1_2cpt_TlagkaClV1QV2.txt'
+
+DEFINITION:
+PCSTRESN_ngmL = {distribution=normal, prediction=Cc, errorModel=proportional(b)}
+
+<FIT>
+data = 'PCSTRESN_ngmL'
+model = PCSTRESN_ngmL
+
+<PARAMETER>
+Cl_pop = {value=0.2282, method=MLE}
+Q_pop = {value=0.1182, method=MLE}
+Tlag_pop = {value=0.1985, method=MLE}
+V1_pop = {value=0.1393, method=MLE}
+V2_pop = {value=1.4297, method=MLE}
+b = {value=0.3, method=MLE}
+c = {value=1, method=FIXED}
+ka_pop = {value=0.6194, method=MLE}
+omega_Cl = {value=0.4274, method=MLE}
+omega_Q = {value=0.439, method=MLE}
+omega_Tlag = {value=1, method=MLE}
+omega_V1 = {value=0.9075, method=MLE}
+omega_V2 = {value=0.6264, method=MLE}
+omega_ka = {value=1, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(run = false,method = none )
+fim(method = StochasticApproximation)
+logLikelihood(method = ImportanceSampling)
+
+[PLOTS]
+run = false
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = 'verapamide_base_pk'
+dataandmodelnexttoproject = yes
+
+POPULATION:
+variability = firstStage
+

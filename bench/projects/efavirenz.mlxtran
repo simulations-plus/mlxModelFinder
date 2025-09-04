@@ -1,0 +1,76 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='data_efavirenz.csv'}
+delimiter = comma
+header={ID, TIME, AMT, DV, CENS, LIMIT, PERIOD, FORM, SEQUENCE, SEX, WT, AGE, HT, SMOKING}
+
+[CONTENT]
+ID = {use=identifier}
+TIME = {use=time}
+AMT = {use=amount}
+DV = {use=observation, type=continuous}
+CENS = {use=censored}
+LIMIT = {use=limit}
+PERIOD = {use=occasion}
+FORM = {use=covariate, type=categorical}
+SEQUENCE = {use=covariate, type=categorical}
+SEX = {use=covariate, type=categorical}
+WT = {use=covariate, type=continuous}
+AGE = {use=covariate, type=continuous}
+HT = {use=covariate, type=continuous}
+
+<MODEL>
+
+[COVARIATE]
+input = {AGE, HT, WT, FORM, SEQUENCE, SEX}
+
+FORM = {type=categorical, categories={'Ref', 'Test'}}
+SEQUENCE = {type=categorical, categories={'RT', 'TR'}}
+SEX = {type=categorical, categories={'Female', 'Male'}}
+
+[INDIVIDUAL]
+input = {Cl_pop, omega_Cl, V_pop, omega_V}
+
+DEFINITION:
+Cl = {distribution=logNormal, typical=Cl_pop, sd=omega_Cl}
+V = {distribution=logNormal, typical=V_pop, sd=omega_V}
+
+[LONGITUDINAL]
+input = {a, b}
+
+file = 'lib:bolus_1cpt_VCl.txt'
+
+DEFINITION:
+DV = {distribution=normal, prediction=Cc, errorModel=combined1(a, b)}
+
+<FIT>
+data = 'DV'
+model = DV
+
+<PARAMETER>
+Cl_pop = {value=0.5, method=MLE}
+V_pop = {value=1, method=MLE}
+a = {value=1, method=MLE}
+b = {value=0.3, method=MLE}
+c = {value=1, method=FIXED}
+omega_Cl = {value=1, method=MLE}
+omega_V = {value=1, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(method = {conditionalMean, conditionalMode })
+fim(run = false,method = StochasticApproximation)
+logLikelihood(run = false,method = ImportanceSampling)
+
+[PLOTS]
+run = true
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = 'efavirenz'
+dataandmodelnexttoproject = yes
+

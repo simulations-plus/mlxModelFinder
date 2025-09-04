@@ -1,0 +1,67 @@
+<DATAFILE>
+
+[FILEINFO]
+file={path='plasma_GBR_data_formatted_full.csv'}
+delimiter = comma
+header={ID, TIME, DOSE, CONC, GENDER, WT}
+
+[CONTENT]
+ID = {use=identifier}
+TIME = {use=time}
+DOSE = {use=amount}
+CONC = {use=observation, type=continuous}
+GENDER = {use=covariate, type=categorical}
+WT = {use=covariate, type=continuous}
+
+<MODEL>
+
+[COVARIATE]
+input = {WT, GENDER}
+
+GENDER = {type=categorical, categories={'1', '2'}}
+
+[INDIVIDUAL]
+input = {Cl_pop, omega_Cl, V_pop, omega_V}
+
+DEFINITION:
+Cl = {distribution=logNormal, typical=Cl_pop, sd=omega_Cl}
+V = {distribution=logNormal, typical=V_pop, sd=omega_V}
+
+[LONGITUDINAL]
+input = {a, b}
+
+file = 'lib:bolus_1cpt_VCl.txt'
+
+DEFINITION:
+CONC = {distribution=normal, prediction=Cc, errorModel=combined1(a, b)}
+
+<FIT>
+data = 'CONC'
+model = CONC
+
+<PARAMETER>
+Cl_pop = {value=0.5, method=MLE}
+V_pop = {value=1, method=MLE}
+a = {value=1, method=MLE}
+b = {value=0.3, method=MLE}
+c = {value=1, method=FIXED}
+omega_Cl = {value=1, method=MLE}
+omega_V = {value=1, method=MLE}
+
+<MONOLIX>
+
+[TASKS]
+populationParameters()
+individualParameters(method = {conditionalMean, conditionalMode })
+fim(run = false,method = StochasticApproximation)
+logLikelihood(run = false,method = ImportanceSampling)
+
+[PLOTS]
+run = true
+plots = {indfits = {selected = true}, parameterdistribution = {selected = true}, obspred = {selected = true}, covariancemodeldiagnosis = {selected = true}, covariatemodeldiagnosis = {selected = true}, vpc = {selected = true}, residualsscatter = {selected = true}, residualsdistribution = {selected = true}, randomeffects = {selected = true}, saemresults = {selected = true}}
+
+[SETTINGS]
+GLOBAL:
+exportpath = 'plasma_GBR'
+dataandmodelnexttoproject = yes
+
