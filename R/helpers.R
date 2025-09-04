@@ -151,12 +151,28 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
   }
   if (iiv) {
     if (library == "pk") {
+
       nb_params <- list(
-        delay = c(0, 1),
-        absorption = c(1, 1, 2, 3),
-        distribution = c(1, 3, 5),
-        elimination = c(1, 2, 3),
-        bioavailability = c(1, 0)
+        delay = data.frame(
+          delay = c("noDelay", "lagTime"),
+          level = c(0, 1)
+        ),
+        absorption = data.frame(
+          absorption = c("firstOrder", "zeroOrder", "sigmoid", "transitCompartments"),
+          level = c(1, 1, 2, 3)
+        ),
+        distribution = data.frame(
+          distribution = c("1compartment", "2compartments", "3compartments"),
+          level = c(1, 3, 5)
+        ),
+        elimination = data.frame(
+          elimination = c("linear", "MichaelisMenten", "combined"),
+          level = c(1, 2, 3)
+        ),
+        bioavailability = data.frame(
+          bioavailability = c("false", "true"),
+          level = c(0, 1)
+        )
       )
 
       all_models <- expand.grid(filters, stringsAsFactors = FALSE)
@@ -165,16 +181,26 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
         all_models[all_models$absorption == "transitCompartments", ]$delay <- NA
     }
 
-    common_names <- intersect(names(nb_params), names(filters))
-    param_maps <- mapply(setNames, nb_params[common_names], filters[common_names], SIMPLIFY = FALSE)
+    common_names <- intersect(names(nb_params), colnames(all_models))
+
+    param_maps <- mapply(function(df, feat) {
+      setNames(df$level, as.character(df[[feat]]))
+    }, nb_params[common_names], common_names, SIMPLIFY = FALSE)
+
+    print(param_maps)
 
     param_values <- mapply(function(column_data, map) {
-      map[column_data]
-    }, all_models, param_maps)
-    all_models$total_params <- rowSums(param_values, na.rm = TRUE)
+      unname(map[as.character(column_data)])
+    }, all_models[common_names], param_maps, SIMPLIFY = FALSE)
+
+    print(param_values)
+
+    all_models$total_params <- rowSums(as.data.frame(param_values), na.rm = TRUE)
+
     space <- sum(2^all_models$total_params)
   }
   if (error) space <- space * 4
+
   return(space)
 }
 
