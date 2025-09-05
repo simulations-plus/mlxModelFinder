@@ -1,4 +1,4 @@
-runTournament <- function(library, filters, requiredFilters, settings, metric_func) {
+runTournament <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
 
   # --- Initialization ---
   cli::cli_h1("Initializing Tournament Search")
@@ -110,7 +110,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
       iiv_params <- if (settings$iiv) as.data.frame(current_model$iiv) else NULL
       error_model <- if (settings$error) as.data.frame(current_model$error) else NULL
 
-      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
 
       models_tested <- models_tested + 1
 

@@ -86,7 +86,7 @@ textify <- function(df, run = NULL) {
   return(text)
 }
 
-runDecisionTree <- function(library, filters, requiredFilters, settings, metric_func) {
+runDecisionTree <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
 
   # --- Initialization ---
   cli::cli_h1("Initializing Decision Tree Search")
@@ -110,7 +110,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   model_hash <- create_model_hash(base_model_df)
   model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
 
-  runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+  runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
 
   # Calculate the performance metric
   metric <- metric_func()
@@ -226,7 +226,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       }
 
       model <- getModelName("pk", filters = append(current_model_df, requiredFilters))
-      runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+      runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
 
       # Calculate the performance metric
       metric <- metric_func()
