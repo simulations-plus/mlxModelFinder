@@ -109,7 +109,8 @@
 #'                       "ivOral1_project.mlxtran"),
 #'   library = "pk",
 #'   requiredFilters = list(administration = "oralBolus", parametrization = "rate"),
-#'   filters = list(absorption = c("zeroOrder", "firstOrder"), elimination = "linear", bioavailability = "true"),
+#'   filters = list(absorption = c("zeroOrder", "firstOrder"),
+#'                  elimination = "linear", bioavailability = "true"),
 #'   settings = list(findIIV = FALSE, findError = FALSE, plot = FALSE)
 #' )
 #'
@@ -141,7 +142,7 @@
 #' )
 #' }
 #'
-#' @importFrom stats aggregate lm optim setNames
+#' @importFrom stats aggregate lm optim setNames as.formula model.matrix predict
 #' @importFrom utils read.csv write.csv
 #' @importFrom cli cli_alert_success cli_progress_bar
 #' @importFrom cli cli_progress_done cli_progress_update

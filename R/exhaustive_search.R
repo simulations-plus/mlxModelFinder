@@ -27,7 +27,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     model <- all_models[i, ]
     model <- getModelName("pk", filters = append(model[, !(names(model) %in% c("error"))], requiredFilters))
 
-    setStructuralModel(model)
+    lixoftConnectors::setStructuralModel(model)
 
     error_model <- if (settings$error) as.data.frame(all_models$error)[i, ] else NULL
 

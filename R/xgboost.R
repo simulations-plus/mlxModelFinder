@@ -1,15 +1,3 @@
-#' Apply Model-Specific Applicability Rules (Vectorized)
-#'
-#' @description
-#' Vectorized function to adjust parameter values for a data frame of model
-#' candidates based on their structural features and required filters.
-#'
-#' @param struct_features A multi-row data.frame of structural model features.
-#' @param param_df A multi-row data.frame of corresponding parameter values.
-#' @param param_cols A character vector of all possible parameter column names.
-#' @param requiredFilters A named list of fixed features to apply to all candidates.
-#' @return A data.frame of adjusted parameter values.
-
 make_applicable <- function(struct_features, param_df, param_cols, requiredFilters = list()) {
 
   params_out <- as.data.frame(param_df)
@@ -88,18 +76,6 @@ make_applicable <- function(struct_features, param_df, param_cols, requiredFilte
 }
 
 
-#' (Placeholder) Build a Grid of Combinations from a List of Choices
-#'
-#' @description
-#' This is a placeholder for the user-provided `build_per_column_grid` function
-#' to ensure the script is runnable. It creates all combinations and samples
-#' them if the total exceeds a specified maximum.
-#'
-#' @param choices_list A named list where each element is a vector of choices.
-#' @param max_combos The maximum number of combinations to return.
-#' @param n_cols The number of columns (unused, kept for compatibility).
-#' @return A data.frame of combinations.
-
 build_per_column_grid <- function(choices_list, max_combos, n_cols) {
   # expand.grid creates a data frame from all combinations of the supplied vectors
   full_grid <- expand.grid(choices_list, stringsAsFactors = FALSE)
@@ -111,14 +87,6 @@ build_per_column_grid <- function(choices_list, max_combos, n_cols) {
   }
   return(full_grid)
 }
-
-#' Generate a Grid of Candidate Model Features
-#'
-#' @param probas_list A list containing a `$filters` data.frame.
-#' @param runs_df The data.frame of training runs, used as a fallback.
-#' @param target_cols The column names to generate candidates for.
-#' @param max_combos Maximum number of combinations to generate.
-#' @return A data.frame of candidate feature combinations.
 
 build_candidates <- function(probas_list, runs_df, target_cols, max_combos) {
   filters_df <- as.data.frame(probas_list$filters)
@@ -164,15 +132,6 @@ build_candidates <- function(probas_list, runs_df, target_cols, max_combos) {
   build_per_column_grid(choices_list, max_combos, length(target_cols))
 }
 
-
-#' Encode a DataFrame for XGBoost Modeling
-#'
-#' @param df The data.frame to encode.
-#' @param all_feature_cols All columns to be encoded.
-#' @param param_cols The subset of columns that are parameters (logical/NA).
-#' @param levels_list A named list of factor levels for each column.
-#' @return The encoded data.frame.
-
 encode_for_model <- function(df, all_feature_cols, param_cols, levels_list) {
   for (col in param_cols) {
     if (col %in% names(df)) {
@@ -191,14 +150,6 @@ encode_for_model <- function(df, all_feature_cols, param_cols, levels_list) {
 
   return(df)
 }
-
-#' Train an XGBoost Model and Propose Top N Candidates
-#'
-#' @param modelsToTest Optional: A data.frame of specific models to test. If NULL,
-#'   the function generates candidates automatically.
-#' @param requiredFilters A named list of fixed features to influence rule application.
-#' @param ... Other function arguments.
-#' @return A data.frame of the top N candidates with their predicted metric.
 
 train_xgb_and_propose <- function(
     list_of_runs,
