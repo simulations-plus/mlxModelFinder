@@ -1,44 +1,96 @@
-#' Run Model Selection
+#' Run Model Selection (PK, Monolix)
 #'
-#' @param project (required) Path to the Monolix project with the loaded data set (SAEM settings, seed will be taken from the project).
-#' @param library (required) The model library to use. Options: "pk" (for now).
-#' @param filters (optional) A list defining the structural model components to explore. For the "pk" library, the options are:
-#' \itemize{
-#'   \item \strong{delay}: "noDelay", "lagTime"
-#'   \item \strong{absorption}: "zeroOrder", "firstOrder", "sigmoid", "transitCompartments"
-#'   \item \strong{distribution}: "1compartment", "2compartments", "3compartments"
-#'   \item \strong{elimination}: "linear", "MichaelisMenten", "combined"
-#'   \item \strong{bioavailability} (if administration is "oralBolus"): "true", "false"
-#' }
-#' If a filter is not specified, all its possible options will be included in the search.
-#' @param requiredFilters (required) A list of required structural model components. For PK models, options are: administration ("bolus", "infusion", "oral", "oralBolus") and parametrization ("rate", "clearance").
-#' @param algorithm (optional) Algorithm to use. Options are "ACO", "tournament", "exhaustive_search", "decision_tree". If not provided, it's automatically selected: "ACO" if searching for IIV, and "decision_tree" otherwise.
-#' @param settings (optional) A list of settings for the algorithms.
-#'   - N: Number of models to test per iteration (ants/wins for ACO/Tournament). Default depends on the search space size.
-#'   - findIIV: Boolean, whether to explore interindividual variability. Default: FALSE.
-#'   - findError: Boolean, whether to explore the residual error model. Default: FALSE.
-#'   - seed: A random seed for reproducibility. Default: 123456.
-#'   - previous_runs: An optional data frame of previous model runs to learn from.
-#'   - output: Optional file path to save results incrementally (with the csv extension). If not provided, the results are not saved incrementally.
-#'   - convergence_threshold (ACO): The proportion of ants that must select the same model to trigger convergence (e.g., 0.75). Default: 0.75.
-#'   - initial_iiv_forced_iter (ACO/Tournament): The number of initial iterations where IIV is forced on all parameters to encourage exploration (e.g., 3). Default: 3.
-#'   - rho (ACO/Tournament): Evaporation (learning) rate. Default depends on the search space size.
-#'   - obsIDToUse: Observation ID to use (required if multiple observation IDs).
-#'   - plot: Plot the progress (TRUE/FALSE). Default: TRUE.
-#'   - clip: Clip probabilities (TRUE/FALSE). Default: FALSE.
-#'   - linearization: Should linearization be used for calculation of log-likelihood if the default metric_func is used. Default: FALSE.
-#'   - save_mode: Character string indicating how model runs should be saved during training.
-#'     Must be one of:
-#'     \itemize{
-#'       \item \code{"none"}: Do not save any model runs.
-#'       \item \code{"best"} (default): Save only the best-performing model based.
-#'       \item \code{"all"}: Save all model runs.
-#'     }
-#'     Models are saved in the autoBuild subdirectory of the result folder of the project.
-#' @param metric_func (optional) A function that returns the performance metric for the last run model (based on lixoftConnectors). By default, BICc if no IIV, BICc + count(RSE>50%) * number_of_observations, if IIV.
-#' @param initial_func (optional) A function to return initial estimates. The pkpopini function from Rsmlx by default.
+#' Automates structural model selection for PK models in Monolix via
+#' `lixoftConnectors`. The function constructs a search space from
+#' `requiredFilters` (route/parametrization) and optional `filters`
+#' (absorption, delay, distribution, elimination, bioavailability), then
+#' explores that space using a chosen algorithm and returns a tidy data frame
+#' of all tested models with their performance metrics and run metadata.
 #'
-#' @return A data frame containing all models tested and their performance metrics.
+#' If `algorithm` is not provided, it is selected automatically:
+#' **"ACO"** when searching for IIV (`settings$iiv = TRUE`), otherwise
+#' **"decision_tree"**.
+#'
+#' @param project (required) Path to the **Monolix** project (`.mlxtran`) that already
+#'   contains the dataset and SAEM settings. Estimation settings/seed are taken
+#'   from the project.
+#' @param library (required) Model library to use. Options: `"pk"` (currently supported).
+#' @param filters (optional) Named list defining **optional** structural components
+#'   to explore. For the `"pk"` library:
+#'   \itemize{
+#'     \item \strong{delay}: `"noDelay"`, `"lagTime"`
+#'     \item \strong{absorption}: `"zeroOrder"`, `"firstOrder"`, `"sigmoid"`, `"transitCompartments"`
+#'     \item \strong{distribution}: `"1compartment"`, `"2compartments"`, `"3compartments"`
+#'     \item \strong{elimination}: `"linear"`, `"MichaelisMenten"`, `"combined"`
+#'     \item \strong{bioavailability} (only if \code{requiredFilters$administration == "oralBolus"}):
+#'           `"true"`, `"false"`
+#'   }
+#'   If a component is omitted, **all** of its options are included in the search.
+#' @param requiredFilters (required) Named list of **required** structural components:
+#'   \itemize{
+#'     \item \strong{administration}: `"bolus"`, `"infusion"`, `"oral"`, `"oralBolus"`
+#'     \item \strong{parametrization}: `"rate"`, `"clearance"`
+#'   }
+#' @param algorithm (optional) Search algorithm. One of
+#'   `"ACO"`, `"tournament"`, `"exhaustive_search"`, `"decision_tree"`.
+#'   If `NULL`, defaults to `"ACO"` when `settings$iiv = TRUE`, otherwise `"decision_tree"`.
+#' @param settings (optional) Named list of search/algorithm settings. Unless stated,
+#'   defaults are chosen adaptively (see below). Supported entries:
+#'   \itemize{
+#'     \item \strong{N}: Integer; models per iteration (ants for ACO; wins/cohort size for Tournament).
+#'           Default: `10` (no IIV) or `20` (with IIV).
+#'     \item \strong{findIIV}: Logical; explore interindividual variability (IIV). Default: `FALSE`.
+#'     \item \strong{findError}: Logical; explore residual error model. Default: `FALSE`.
+#'     \item \strong{seed}: Integer; RNG seed for reproducibility. Default: `123456`.
+#'     \item \strong{previous_runs}: Optional path to a CSV of past runs to warm-start/learn from. Default: `NULL`.
+#'     \item \strong{output}: Optional CSV path; if provided, results are appended incrementally. Default: `NULL`.
+#'     \item \strong{initial_iiv_forced_iter} (ACO/Tournament): Integer; number of initial iterations
+#'           where IIV is forced on all parameters to encourage exploration. Default: `3`.
+#'     \item \strong{rho} (ACO/Tournament): Learning/evaporation rate. Default: `0.4` (no IIV) or `0.6` (with IIV).
+#'     \item \strong{obsIDToUse}: Character/integer; which observation ID to use (required if the project has multiple).
+#'     \item \strong{plot}: Logical; if `TRUE` and optional deps are available, render progress
+#'           (DiagrammeR/data.tree for Decision Tree; plotly/htmltools for ACO/Tournament). Default: `TRUE`.
+#'     \item \strong{linearization}: Logical; if `TRUE`, use linearization for log-likelihood in the default metric.
+#'           Default: `FALSE`.
+#'     \item \strong{save_mode}: How to persist Monolix runs during training. One of:
+#'       \itemize{
+#'         \item \code{"none"}: do not save runs
+#'         \item \code{"best"} (default): save only the current best-performing run
+#'         \item \code{"all"}: save every run
+#'       }
+#'       Models (if saved) are written under \code{autoBuild/} in the project's result directory.
+#'     \item \strong{clip}: Logical; clip sampling probabilities during stochastic search. Default: `FALSE`.
+#'     \item \strong{keys}: Character vector; internal ordering of structural “keys” to update
+#'           during decision tree (auto-derived from administration).
+#'     \item \strong{elitism}: Logical; keep the current best candidate across iterations (ACO).
+#'           Default: `TRUE`.
+#'     \item \strong{max_models}: Integer cap on the total number of models to evaluate. Default: `1e6`.
+#'     \item \strong{iiv_favor_true}: Logical; bias exploration toward keeping IIV Default: `FALSE`.
+#'     \item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: `FALSE`. Limited testing performed.
+#'     \item \strong{xgboost_model_nb}: Integer; number of boosting models to maintain if \code{xgboost = TRUE}. Default: `5`.
+#'     \item \strong{local_search}: Logical; enable optional local IIV refinement around good candidates (ACO). Default: `FALSE`.
+#'   }
+#' @param metric_func (optional) **Zero-argument** function that returns a single numeric
+#'   score for the **last run model** (lower is better). Use `lixoftConnectors` inside
+#'   the function to read results (e.g., information criteria). **Default**:
+#'   \emph{BICc} when `settings$iiv = FALSE`; \emph{BICc + penalty} when `settings$iiv = TRUE`,
+#'   where the penalty is \code{count(RSE > 50\%) * log(n_observations)}. This default was chosen
+#'   after thorough testing for robustness and precision.
+#' @param initial_func (optional) Function that **takes one argument** (the \code{project}
+#'   path) and **returns a project path** (same or new) after setting initial values via
+#'   `lixoftConnectors`. Use this to inject custom population initials before each run.
+#'   If `NULL`, the package uses its internal/default initializer.
+#'
+#' @return A data frame where each row corresponds to a tested model, including:
+#'   structural choices, IIV/error settings, convergence status, metric value, timing,
+#'   and (if enabled) paths to saved Monolix runs.
+#'
+#' @details
+#' The function initializes `lixoftConnectors`, loads the provided project, validates inputs,
+#' constructs the search space from `requiredFilters` + `filters`, and then runs the selected
+#' algorithm. Progress and diagrams are only plotted if `settings$plot = TRUE` and the relevant
+#' suggested packages are installed.
+#'
 #' @examples
 #' \dontrun{
 #' # Example 1: Default search with oral clearance models and additional filters
@@ -47,27 +99,28 @@
 #'                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
 #'   library = "pk",
 #'   requiredFilters = list(administration = "oral", parametrization = "clearance"),
-#'   filters = list(delay = c("noDelay", "lagTime"), elimination = "linear"),
-#'   settings = list(iiv = FALSE, error = TRUE, save_mode = "best")
+#'   filters = list(absorption = c("zeroOrder", "firstOrder"), elimination = "linear"),
+#'   settings = list(findIIV = FALSE, findError = TRUE)
 #' )
 #'
-#' # Example 2: Oral bolus rate-parametrized models on an IV/Oral project
+#' # Example 2: Oral bolus rate-parametrized models on an IV/Oral project w/o plotting progress
 #' findModel(
 #'   project = file.path(getDemoPath(), "6.PK_models", "6.2.multiple_routes",
 #'                       "ivOral1_project.mlxtran"),
 #'   library = "pk",
 #'   requiredFilters = list(administration = "oralBolus", parametrization = "rate"),
-#'   filters = list(delay = c("noDelay", "lagTime"), elimination = "linear"),
-#'   settings = list(iiv = FALSE, error = FALSE)
+#'   filters = list(absorption = c("zeroOrder", "firstOrder"),
+#'                  elimination = "linear", bioavailability = "true"),
+#'   settings = list(findIIV = FALSE, findError = FALSE, plot = FALSE)
 #' )
 #'
-#' # Example 3: Bolus route with IIV and residual error estimation
+#' # Example 3: Bolus route with IIV and residual error estimation, saving progress
 #' findModel(
 #'   project = file.path(getDemoPath(), "6.PK_models", "6.1.single_route",
 #'                       "bolusMixed_project.mlxtran"),
 #'   library = "pk",
 #'   requiredFilters = list(administration = "bolus", parametrization = "rate"),
-#'   settings = list(iiv = TRUE, error = TRUE, output = "list_of_runs.csv")
+#'   settings = list(findIIV = TRUE, findError = TRUE, output = "list_of_runs.csv")
 #' )
 #'
 #' # Example 4: Exhaustive search over oral clearance models
@@ -76,8 +129,7 @@
 #'                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
 #'   library = "pk",
 #'   requiredFilters = list(administration = "oral", parametrization = "clearance"),
-#'   algorithm = "exhaustive_search",
-#'   settings = list(output = "list_of_runs.csv")
+#'   algorithm = "exhaustive_search"
 #' )
 #'
 #' # Example 5: Decision tree search strategy
@@ -90,7 +142,7 @@
 #' )
 #' }
 #'
-#' @importFrom stats aggregate lm optim setNames
+#' @importFrom stats aggregate lm optim setNames as.formula model.matrix predict
 #' @importFrom utils read.csv write.csv
 #' @importFrom cli cli_alert_success cli_progress_bar
 #' @importFrom cli cli_progress_done cli_progress_update
@@ -115,17 +167,11 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   validate_project(project)
   validate_library(library)
   validate_required_filters(requiredFilters)
-  if (!is.null(algorithm)) {
-    validate_algorithm(algorithm)
-  }
-  if (!is.null(filters))
-    validate_filters(filters, requiredFilters)
-  if (!is.null(settings))
-    validate_settings(settings)
-  if (!is.null(metric_func))
-    validate_no_argument_function(metric_func, "metric_func")
-  if (!is.null(initial_func))
-    validate_no_argument_function(initial_func, "initial_func")
+  if (!is.null(algorithm)) validate_algorithm(algorithm)
+  if (!is.null(filters))   validate_filters(filters, requiredFilters)
+
+  if (!is.null(metric_func))  validate_metric_func_no_args(metric_func)
+  if (!is.null(initial_func)) validate_initial_func_one_arg(initial_func)
 
   # --- Default Settings ---
   keys <- switch(requiredFilters$administration,
@@ -157,12 +203,6 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     local_search = FALSE
   )
 
-  # Overwrite defaults with user-provided settings
-  if (!is.null(settings)) {
-    default_settings[names(settings)] <- settings
-  }
-  settings <- default_settings
-
   # --- Setup ---
   set.seed(settings$seed)
   filters <- updateFilters(library, filters, requiredFilters)
@@ -171,13 +211,17 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
 
   # --- Algorithm Selection ---
   if (is.null(algorithm)) {
-    if (settings$iiv) {
-      algorithm <- "ACO"
-    } else {
-      algorithm <- "decision_tree"
-    }
+    algorithm <- if (isTRUE(settings$iiv)) "ACO" else "decision_tree"
     cli::cli_alert_info("Algorithm automatically selected: {algorithm}")
   }
+
+  validate_settings(settings, algorithm)
+
+  # --- Override default settings ---
+  if (!is.null(settings)) {
+    default_settings[names(settings)] <- settings
+  }
+  settings <- default_settings
 
   # --- Do not plot diagrams / progress if packages not installed ---
   if (isTRUE(settings$plot) && identical(algorithm, "decision_tree")) {
@@ -237,19 +281,16 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
 
   switch(algorithm,
          ACO = {
-           return(runACO(library, filters, requiredFilters, settings, metric_func))
+           return(runACO(library, filters, requiredFilters, settings, metric_func, initial_func))
          },
          tournament = {
-           return(runTournament(library, filters, requiredFilters, settings, metric_func))
+           return(runTournament(library, filters, requiredFilters, settings, metric_func, initial_func))
          },
-         # random_forest = {
-         #   return(runRandomForest(library, filters, requiredFilters, settings, metric_func))
-         # },
          exhaustive_search = {
-           return(runExhaustiveSearch(library, filters, requiredFilters, settings, metric_func))
+           return(runExhaustiveSearch(library, filters, requiredFilters, settings, metric_func, initial_func))
          },
          decision_tree = {
-           return(runDecisionTree(library, filters, requiredFilters, settings, metric_func))
+           return(runDecisionTree(library, filters, requiredFilters, settings, metric_func, initial_func))
          })
 }
 

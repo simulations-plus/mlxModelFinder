@@ -1,4 +1,4 @@
-runACO <- function(library, filters, requiredFilters, settings, metric_func) {
+runACO <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
 
   # --- Initialization ---
   cli::cli_h1("Initializing ACO Search")
@@ -130,7 +130,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
       iiv_params <- if (settings$iiv) as.data.frame(models$iiv)[i, ] else NULL
       error_model <- if (settings$error) as.data.frame(models$error)[i, ] else NULL
 
-      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
 
       models_tested <- models_tested + 1
 
@@ -205,7 +205,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func) {
           next
         }
 
-        runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+        runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
 
         models_tested <- models_tested + 1
 

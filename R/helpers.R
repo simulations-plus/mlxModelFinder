@@ -93,6 +93,8 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   lixoftConnectors::saveProject(project_path)
   if (is.null(initial_func))
     path <- initialValues(project_path)
+  else
+    path <- initial_func(project_path)
   lixoftConnectors::loadProject(path)
 
   if (!is.null(iiv)) {

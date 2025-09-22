@@ -1,4 +1,4 @@
-runExhaustiveSearch <- function(library, filters, requiredFilters, settings, metric_func) {
+runExhaustiveSearch <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
 
   all_models <- expand.grid(filters, stringsAsFactors = FALSE)
 
@@ -27,7 +27,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     model <- all_models[i, ]
     model <- getModelName("pk", filters = append(model[, !(names(model) %in% c("error"))], requiredFilters))
 
-    setStructuralModel(model)
+    lixoftConnectors::setStructuralModel(model)
 
     error_model <- if (settings$error) as.data.frame(all_models$error)[i, ] else NULL
 
@@ -49,7 +49,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     for (j in 1:nrow(iiv_combos)) {
       iiv_model <- iiv_combos[j, ]
 
-      runModel(model, iiv = iiv_model, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization)
+      runModel(model, iiv = iiv_model, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
       metric <- metric_func()
 
       if (metric < best_metric) {
