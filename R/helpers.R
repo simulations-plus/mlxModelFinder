@@ -79,6 +79,7 @@ calculateMetricBICc <- function() {
 
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
                      obsIDToUse = NULL, linearization = FALSE) {
+
   error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
   lixoftConnectors::setStructuralModel(model)
 

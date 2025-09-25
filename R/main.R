@@ -180,6 +180,10 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
      c("distribution", "elimination")
   )
 
+  if (is.null(settings)) settings <- list(iiv = FALSE, error = FALSE)
+  if (is.null(settings$iiv)) settings$iiv <- FALSE
+  if (is.null(settings$error)) settings$error <- FALSE
+
   default_settings <- list(
     N = ifelse(is.null(settings$iiv) || !settings$iiv, 10, 20),
     iiv = FALSE,
@@ -249,10 +253,16 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   validate_obsidtouse(settings)
 
   init_var <- lixoftConnectors::getIndividualParameterModel()$variability
-  init_var <- lapply(init_var, function(x) {
-    x[] <- TRUE
+  init_var <- lapply(names(init_var), function(nm) {
+    x <- init_var[[nm]]
+    if (nm == "id") {
+      x[] <- TRUE
+    } else {
+      x[] <- FALSE
+    }
     return(x)
   })
+  names(init_var) <- names(lixoftConnectors::getIndividualParameterModel()$variability)
 
   init_cor <- lixoftConnectors::getIndividualParameterModel()$correlationBlocks
   init_cor <- lapply(init_cor, function(x) list())
