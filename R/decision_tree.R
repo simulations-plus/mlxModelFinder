@@ -99,35 +99,48 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     cli::cli_alert_info("Seeding run history with {nrow(settings$previous_runs)} previous results.")
     model_def_cols <- setdiff(colnames(settings$previous_runs), c("metric", "rank"))
 
-    hashes <- apply(settings$previous_runs[, model_def_cols, drop = FALSE], 1, create_model_hash)
+    rows <- split(settings$previous_runs[, model_def_cols, drop = FALSE],
+                  seq_len(nrow(settings$previous_runs)))
+    hashes <- lapply(rows, create_model_hash)
 
     prev_runs_list <- split(settings$previous_runs, seq(nrow(settings$previous_runs)))
     names(prev_runs_list) <- hashes
-    list_of_runs <- prev_runs_list
   }
+
 
   base_model_df <- getBaseModel(library, filters)
   model_hash <- create_model_hash(base_model_df)
   model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
 
-  runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+  if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
 
-  # Calculate the performance metric
-  metric <- metric_func()
+    if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+      list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
+      prev_runs_list[[model_hash]] <- NULL
+    }
+
+    metric <- list_of_runs[[model_hash]]$metric
+
+  } else {
+
+    runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+    metric <- metric_func()
+
+    if (settings$save_mode == "all")
+      lixoftConnectors::saveProject(file.path(
+        settings$result_folder,
+        "autoBuild",
+        paste0("run_", models_tested, ".mlxtran")
+      ))
+
+    if (settings$save_mode == "best")
+      lixoftConnectors::saveProject(
+        file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+      )
+
+  }
 
   models_tested <- 1
-
-  if (settings$save_mode == "all")
-    lixoftConnectors::saveProject(file.path(
-      settings$result_folder,
-      "autoBuild",
-      paste0("run_", models_tested, ".mlxtran")
-    ))
-
-  if (settings$save_mode == "best")
-    lixoftConnectors::saveProject(
-      file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-    )
 
   # Store results
   model_info <- base_model_df
@@ -214,12 +227,25 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       model_hash <- create_model_hash(current_model_df)
 
       # Check if this exact model has been run before
-      if (model_hash %in% names(list_of_runs)) {
+      if (model_hash %in% names(list_of_runs) || !is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+
+        if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+          models_tested <- models_tested + 1
+          list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
+          prev_runs_list[[model_hash]] <- NULL
+        }
+
         metric <- list_of_runs[[model_hash]]$metric
 
         if (settings$plot) {
           child$metric <- metric
           child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+        }
+
+        if (base_metric > metric) {
+          base_metric <- metric
+          base_model_df <- current_model_df
+          path[length(path)] <- value_string
         }
 
         next
