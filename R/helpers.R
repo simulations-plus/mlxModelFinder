@@ -307,3 +307,16 @@ create_model_hash <- function(df_row) {
   df_row <- df_row[, sort(names(df_row)), drop = FALSE]
   paste(names(df_row), df_row, sep = "=", collapse = "&")
 }
+
+save_project <- function(mode, path_all, path_best, idx, improved) {
+
+  project <- lixoftConnectors::getProjectSettings()$project
+
+  if (identical(mode, "all")) {
+    lixoftConnectors::saveProject(file.path(path_all, paste0("run_", idx, ".mlxtran")))
+  } else if (identical(mode, "best") && isTRUE(improved)) {
+    lixoftConnectors::saveProject(file.path(path_best, "best_run.mlxtran"))
+  }
+
+  lixoftConnectors::saveProject(project)
+}

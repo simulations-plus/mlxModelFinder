@@ -29,39 +29,43 @@ featureLevels <- function(library) {
 }
 
 getBaseModel <- function(library, filters) {
-
-  order <- featureLevels(library)
+  levels_map <- featureLevels(library)
 
   base_model <- list()
 
+  # Handle joint absorption + delay first if both provided
   if (all(c("absorption", "delay") %in% names(filters))) {
-    valid_combinations <- order$absorption_delay[
-      (order$absorption_delay$delay %in% filters$delay | is.na(order$absorption_delay$delay)) &
-        order$absorption_delay$absorption %in% filters$absorption,
-    ]
-    if (nrow(valid_combinations) > 0) {
-      best_combination <- valid_combinations[which.min(valid_combinations$level), ]
-      base_model$delay <- best_combination$delay
-      base_model$absorption <- best_combination$absorption
-    } else {
+    combos <- levels_map$absorption_delay
+    valid <- combos[
+      (is.na(combos$delay) | combos$delay %in% filters$delay) &
+        combos$absorption %in% filters$absorption,
+      , drop = FALSE]
+
+    if (nrow(valid) == 0) {
       cli::cli_abort("No valid combination of absorption and delay found in filters.")
     }
+
+    best <- valid[which.min(valid$level), , drop = FALSE]
+    base_model$delay <- best$delay
+    base_model$absorption <- best$absorption
+
     simple_features <- setdiff(names(filters), c("absorption", "delay"))
   } else {
     simple_features <- names(filters)
   }
 
-  common_names <- intersect(names(order), simple_features)
-
+  # Fill the rest feature-by-feature
+  common_names <- intersect(names(levels_map), simple_features)
   for (key in common_names) {
-    levels <- order[[key]]
-    valid_rows <- levels[levels[[key]] %in% filters[[key]], ]
-    if(nrow(valid_rows) > 0) {
-      base_model[[key]] <- valid_rows[which.min(valid_rows$level), key]
+    df <- levels_map[[key]]
+    # choose the minimal level among the allowed values
+    rows <- df[df[[key]] %in% filters[[key]], , drop = FALSE]
+    if (nrow(rows) > 0) {
+      base_model[[key]] <- rows[[key]][which.min(rows$level)]
     }
   }
 
-  return(as.data.frame(base_model))
+  as.data.frame(base_model, stringsAsFactors = FALSE)
 }
 
 textify <- function(df, run = NULL) {
@@ -93,6 +97,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
   # --- Decision Tree State Variables ---
   list_of_runs <- list()
+  prev_runs_list <- NULL
 
   # Pre-populate with previous runs, if provided
   if (!is.null(settings$previous_runs) && nrow(settings$previous_runs) > 0) {
@@ -110,15 +115,14 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
   base_model_df <- getBaseModel(library, filters)
   model_hash <- create_model_hash(base_model_df)
-  model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
+  model <- getModelName(library, filters = append(base_model_df, requiredFilters))
 
-  if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+  models_tested <- 1
 
-    if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
-      list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
-      prev_runs_list[[model_hash]] <- NULL
-    }
+  if (!is.null(prev_runs_list) && model_hash %in% names(prev_runs_list)) {
 
+    list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
+    prev_runs_list[[model_hash]] <- NULL
     metric <- list_of_runs[[model_hash]]$metric
 
   } else {
@@ -126,37 +130,21 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
     metric <- metric_func()
 
-    if (settings$save_mode == "all")
-      lixoftConnectors::saveProject(file.path(
-        settings$result_folder,
-        "autoBuild",
-        paste0("run_", models_tested, ".mlxtran")
-      ))
-
-    if (settings$save_mode == "best")
-      lixoftConnectors::saveProject(
-        file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-      )
+    save_project(settings$save_mode,
+                 path_all  = file.path(settings$result_folder, "autoBuild"),
+                 path_best = file.path(settings$result_folder, "autoBuild"),
+                 idx = models_tested,
+                 improved = TRUE)
 
   }
 
-  models_tested <- 1
-
   # Store results
-  model_info <- base_model_df
-  model_info$metric <- base_metric <- metric
+  base_metric <- metric
+  list_of_runs[[model_hash]] <- transform(base_model_df, metric = metric)
 
-  # Add the new result to the main history and the current iteration's list
-  list_of_runs[[model_hash]] <- model_info
+  levels_map <- featureLevels(library)
 
-  order <- featureLevels(library)
-
-  # random permutation of filters column names
-  if (is.null(settings$keys))
-    keys <- sample(names(filters))
-  else
-    keys <- settings$keys
-
+  keys <- if (is.null(settings$keys)) sample(names(filters)) else settings$keys
   if (all(c("absorption", "delay") %in% keys)) {
     keys[keys == "absorption"] <- "absorption_delay"
     keys <- keys[keys != "delay"]
@@ -178,9 +166,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   for (key in keys) {
     cli::cli_h3("Optimizing {key}")
 
-    levels <- order[[key]]
+    levels_df <- levels_map[[key]]
+    feat_cols <- setdiff(names(levels_df), "level")
 
-    base_value <- base_model_df[, colnames(base_model_df) %in% names(levels)]
+    base_value <- base_model_df[, feat_cols, drop = FALSE]
     base_value_string <- textify(base_value)
 
     if (settings$plot) {
@@ -190,46 +179,41 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       path <- c(path, base_value_string)
     }
 
-    for (i in 1:nrow(levels)) {
+    for (i in 1:nrow(levels_df)) {
 
-      features <- setdiff(names(levels), "level")
-      value <- levels[i, features, drop = FALSE]
+      candidate <- levels_df[i, feat_cols, drop = FALSE]
+      base_value <- base_model_df[, feat_cols, drop = FALSE]
 
-      all_match <- all(sapply(features, function(col) {
-        val <- value[[col]]
-        val %in% filters[[col]] || is.na(val)
-      }))
-
-      if (!all_match) next
-
-      base_value <- base_model_df[, features, drop = FALSE]
-      base_level <- merge(base_value, levels, by = features, all.x = TRUE)$level
-
-      level <- levels[i, "level"]
-
-      if (identical(value, base_value) || abs(level - base_level) > 1)
+      # must satisfy user filters (respect NA in delay when transit)
+      if (!all(mapply(function(col, val) is.na(val) || val %in% filters[[col]], col = feat_cols, val = candidate[1, ]))) {
         next
+      }
+
+      # only consider adjacent levels
+      base_level <- merge(base_value, levels_df, by = feat_cols, all.x = TRUE)$level
+      cand_level <- levels_df$level[i]
+      if (!isTRUE(abs(cand_level - base_level) <= 1) || identical(candidate, base_value)) next
 
       current_model_df <- base_model_df
-      current_model_df[, features] <- value
+      current_model_df[, feat_cols] <- candidate
 
-      value_string <- textify(value)
+      # transitCompartments => NA delay
+      if (identical(library, "pk") && "absorption" %in% names(current_model_df)) {
+        if (isTRUE(current_model_df$absorption[1] == "transitCompartments")) current_model_df$delay <- NA
+      }
+
+      candidate_string <- textify(candidate)
 
       if (settings$plot)
-        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
-
-      if (library == "pk" && "absorption" %in% names(current_model_df)) {
-        is_special_abs <- current_model_df[, "absorption"] == "transitCompartments"
-        if (is_special_abs) current_model_df[is_special_abs, "delay"] <- NA
-      }
+        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(candidate_string)
 
       # Generate a unique hash for the current model configuration
       model_hash <- create_model_hash(current_model_df)
 
       # Check if this exact model has been run before
-      if (model_hash %in% names(list_of_runs) || !is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+      if (model_hash %in% names(list_of_runs) || !is.null(prev_runs_list) && model_hash %in% names(prev_runs_list)) {
 
-        if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
+        if (!is.null(prev_runs_list) && model_hash %in% names(prev_runs_list)) {
           models_tested <- models_tested + 1
           list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
           prev_runs_list[[model_hash]] <- NULL
@@ -242,53 +226,33 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
           child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
         }
 
-        if (base_metric > metric) {
-          base_metric <- metric
-          base_model_df <- current_model_df
-          path[length(path)] <- value_string
-        }
+      } else {
 
-        next
+        model <- getModelName(library, filters = append(current_model_df, requiredFilters))
+        runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+
+        metric <- metric_func()
+        models_tested <- models_tested + 1
+
+        save_project(settings$save_mode,
+                     path_all  = file.path(settings$result_folder, "autoBuild"),
+                     path_best = file.path(settings$result_folder, "autoBuild"),
+                     idx = models_tested,
+                     improved = metric < base_metric)
+
+        list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
+
       }
-
-      model <- getModelName("pk", filters = append(current_model_df, requiredFilters))
-      runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
-
-      # Calculate the performance metric
-      metric <- metric_func()
-
-      models_tested <- models_tested + 1
-
-      if (settings$save_mode == "all")
-        lixoftConnectors::saveProject(file.path(
-          settings$result_folder,
-          "autoBuild",
-          paste0("run_", models_tested, ".mlxtran")
-        ))
-
-      if (metric < base_metric) {
-        if (settings$save_mode == "best")
-          lixoftConnectors::saveProject(
-            file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-          )
-      }
-
-      # Store results
-      model_info <- current_model_df
-      model_info$metric <- metric
 
       if (settings$plot) {
         child$metric <- metric
         child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
       }
 
-      # Add the new result to the main history and the current iteration's list
-      list_of_runs[[model_hash]] <- model_info
-
       if (base_metric > metric) {
         base_metric <- metric
         base_model_df <- current_model_df
-        path[length(path)] <- value_string
+        path[length(path)] <- candidate_string
       }
 
     }
@@ -304,7 +268,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
     cli::cli_alert_success(
       paste0("Done. Selected: ",
-             paste(unlist(base_model_df[, features, drop = FALSE]), collapse = ", ")
+             paste(unlist(base_model_df[, feat_cols, drop = FALSE]), collapse = ", ")
       )
     )
   }
@@ -312,7 +276,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   final_results <- do.call(rbind, list_of_runs)
   rownames(final_results) <- NULL
 
-  model <- getModelName("pk", filters = append(base_model_df, requiredFilters))
+  model <- getModelName(library, filters = append(base_model_df, requiredFilters))
   lixoftConnectors::setStructuralModel(model)
 
   variability <- NA
@@ -335,33 +299,24 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       }
 
       for (param in names(params_wo_var)) {
-        lixoftConnectors::setIndividualParameterModel(
-          list(variability = setNames(list(setNames(FALSE, param)), level))
-        )
-        scenario <- lixoftConnectors::getScenario()
-        scenario$tasks <- c(populationParameterEstimation = TRUE,
-                            conditionalDistributionSampling = TRUE,
-                            conditionalModeEstimation = FALSE,
-                            standardErrorEstimation = TRUE,
-                            logLikelihoodEstimation = TRUE)
-        scenario$linearization <- settings$linearization
-        lixoftConnectors::setScenario(scenario)
-        lixoftConnectors::runScenario()
+        iiv_params <- as.data.frame(as.list(params))
+        iiv_params[, param] <- FALSE
+        runModel(model, iiv = iiv_params, obsIDToUse = settings$obsIDToUse,
+                 linearization = settings$linearization, initial_func = initial_func)
 
         metric <- metric_func()
         models_tested <- models_tested + 1
 
-        if (settings$save_mode == "all")
-          lixoftConnectors::saveProject(file.path(
-            settings$result_folder,
-            "autoBuild",
-            paste0("run_", models_tested, ".mlxtran")
-          ))
+        save_project(settings$save_mode,
+                     path_all  = file.path(settings$result_folder, "autoBuild"),
+                     path_best = file.path(settings$result_folder, "autoBuild"),
+                     idx = models_tested,
+                     improved = metric < base_metric)
 
-        value_string <- paste0("No IIV on ", param)
+        candidate_string <- paste0("No IIV on ", param)
 
         if (settings$plot) {
-          child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
+          child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(candidate_string)
           child$metric <- metric
           child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
         }
@@ -370,12 +325,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
           base_metric <- metric
           base_params <- replace(params, param, FALSE)
           improved <- TRUE
-          path[length(path)] <- value_string
-
-          if (settings$save_mode == "best")
-            lixoftConnectors::saveProject(
-              file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-            )
+          path[length(path)] <- candidate_string
         }
       }
 
@@ -406,18 +356,9 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       if (error == error_model)
         next
 
-      do.call(lixoftConnectors::setErrorModel,
-              setNames(list(error), obs_name))
-
-      scenario <- lixoftConnectors::getScenario()
-      scenario$tasks <- c(populationParameterEstimation = TRUE,
-                          conditionalDistributionSampling = TRUE,
-                          conditionalModeEstimation = FALSE,
-                          standardErrorEstimation = TRUE,
-                          logLikelihoodEstimation = TRUE)
-      scenario$linearization <- settings$linearization
-      lixoftConnectors::setScenario(scenario)
-      lixoftConnectors::runScenario()
+      error_df <- data.frame(error = error)
+      runModel(model, error = error_df, obsIDToUse = settings$obsIDToUse,
+               linearization = settings$linearization, initial_func = initial_func)
 
       metric <- metric_func()
       models_tested <- models_tested + 1
@@ -429,23 +370,25 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
           paste0("run_", models_tested, ".mlxtran")
         ))
 
-      value_string <- error
+      candidate_string <- error
 
       if (settings$plot) {
-        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(value_string)
+        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(candidate_string)
         child$metric <- metric
         child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
       }
 
+      save_project(settings$save_mode,
+                   path_all  = file.path(settings$result_folder, "autoBuild"),
+                   path_best = file.path(settings$result_folder, "autoBuild"),
+                   idx = models_tested,
+                   improved = metric < base_metric)
+
       if (metric < base_metric) {
+        print("error")
         base_metric <- metric
         base_error <- error
         path[length(path)] <- value_string
-
-        if (settings$save_mode == "best")
-          lixoftConnectors::saveProject(
-            file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-          )
       }
     }
 
@@ -468,11 +411,6 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     data.tree::SetNodeStyle(base, shape = "box", style = "rounded")
     print(plot(base))
   }
-
-  if (settings$save_mode == "best")
-    lixoftConnectors::saveProject(
-      file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-    )
 
   return(list(
     results = final_results[order(final_results$metric), ],
