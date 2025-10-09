@@ -374,8 +374,19 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   iteration_progress$rank <- NULL
   iteration_progress <- iteration_progress[, colSums(!is.na(iteration_progress)) > 0]
 
+  best_index <- rownames(res[which(res$metric == min(res$metric)), ])
+
+  best_model_path <- if (settings$save_mode == "best")
+    file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+  else if (settings$save_mode == "all")
+    file.path(settings$result_folder, "autoBuild", paste0("run_", best_index, ".mlxtran"))
+  else
+    NULL
+
   return(list(
-    runs = res,
+    results = res,
+    best_model = res[1, ],
+    best_model_path = best_model_path,
     iteration_progress = iteration_progress,
     prob_history = history_list
   ))
