@@ -254,7 +254,7 @@ plotProbabilities <- function(history_list, ncol = 2, panel_height = 360) {
           "Category: ", title, "<br>",
           "Meaning: ", m, "<br>",
           "Iteration: %{x}<br>",
-          "Probability: %{y:.2f}<extra></extra>"
+          "Sampling Probability: %{y:.2f}<extra></extra>"
         )
       )
     }
@@ -264,8 +264,8 @@ plotProbabilities <- function(history_list, ncol = 2, panel_height = 360) {
       p,
       title = list(text = title, x = 0.02),
       xaxis = list(title = "Iteration Number", rangemode = "tozero", range = c(0, xmax)),
-      yaxis = list(title = "Probability", range = c(0, 1)),
-      legend = list(orientation = "v", x = 1, xanchor = "right", y = 1, yanchor = "top")
+      yaxis = list(title = "Sampling Probability", range = c(0, 1)),
+      legend = list(orientation = "h", x = 0.5, xanchor = "center", y = -0.2, yanchor = "top")
     )
     plotly::config(p, displaylogo = FALSE, toImageButtonOptions = list(scale = 2))
   }
