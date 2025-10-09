@@ -1,3 +1,14 @@
+rbind_fill <- function(lst) {
+  all_cols <- Reduce(union, lapply(lst, names))
+  lst2 <- lapply(lst, function(x) {
+    missing <- setdiff(all_cols, names(x))
+    if (length(missing)) x[missing] <- NA
+    x[all_cols]
+  })
+  do.call(rbind, lst2)
+}
+
+
 featureLevels <- function(library) {
 
   order <- list()
@@ -114,7 +125,6 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
 
   base_model_df <- getBaseModel(library, filters)
-  model_hash <- create_model_hash(base_model_df)
   model <- getModelName(library, filters = append(base_model_df, requiredFilters))
 
   models_tested <- 1
@@ -138,9 +148,23 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
   }
 
+  current_model_df <- base_model_df
+
+  if (settings$iiv) {
+    model <- getModelName(library, filters = append(current_model_df, requiredFilters))
+    lixoftConnectors::setStructuralModel(model)
+    iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+    current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
+  }
+
+  if (settings$error) {
+    current_model_df <- transform(current_model_df, error = "combined1")
+  }
+
   # Store results
   base_metric <- metric
-  list_of_runs[[model_hash]] <- transform(base_model_df, metric = metric)
+  model_hash <- create_model_hash(current_model_df)
+  list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
 
   levels_map <- featureLevels(library)
 
@@ -202,6 +226,19 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
         if (isTRUE(current_model_df$absorption[1] == "transitCompartments")) current_model_df$delay <- NA
       }
 
+      struct_model_df <- current_model_df
+
+      if (settings$iiv) {
+        model <- getModelName(library, filters = append(struct_model_df, requiredFilters))
+        lixoftConnectors::setStructuralModel(model)
+        iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+        current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
+      }
+
+      if (settings$error) {
+        current_model_df <- transform(current_model_df, error = "combined1")
+      }
+
       candidate_string <- textify(candidate)
 
       if (settings$plot)
@@ -228,7 +265,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
       } else {
 
-        model <- getModelName(library, filters = append(current_model_df, requiredFilters))
+        model <- getModelName(library, filters = append(struct_model_df, requiredFilters))
         runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
 
         metric <- metric_func()
@@ -251,7 +288,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
       if (base_metric > metric) {
         base_metric <- metric
-        base_model_df <- current_model_df
+        base_model_df <- struct_model_df
         path[length(path)] <- candidate_string
       }
 
@@ -272,9 +309,6 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       )
     )
   }
-
-  final_results <- do.call(rbind, list_of_runs)
-  rownames(final_results) <- NULL
 
   model <- getModelName(library, filters = append(base_model_df, requiredFilters))
   lixoftConnectors::setStructuralModel(model)
@@ -327,6 +361,14 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
           improved <- TRUE
           path[length(path)] <- candidate_string
         }
+
+        current_model_df <- do.call(transform, c(list(base_model_df), iiv_params))
+        if (settings$error) {
+          current_model_df <- transform(current_model_df, error = "combined1")
+        }
+
+        model_hash <- create_model_hash(current_model_df)
+        list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
       }
 
       variability <- base_params
@@ -334,6 +376,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       if (!improved) break
     }
 
+    lixoftConnectors::setIndividualParameterVariability(id = as.list(variability))
     cli::cli_alert_success("Done")
   }
 
@@ -363,13 +406,6 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       metric <- metric_func()
       models_tested <- models_tested + 1
 
-      if (settings$save_mode == "all")
-        lixoftConnectors::saveProject(file.path(
-          settings$result_folder,
-          "autoBuild",
-          paste0("run_", models_tested, ".mlxtran")
-        ))
-
       candidate_string <- error
 
       if (settings$plot) {
@@ -385,11 +421,19 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
                    improved = metric < base_metric)
 
       if (metric < base_metric) {
-        print("error")
         base_metric <- metric
         base_error <- error
-        path[length(path)] <- value_string
+        path[length(path)] <- candidate_string
       }
+
+      current_model_df <- base_model_df
+      if (settings$iiv) {
+        iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+        current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
+      }
+      current_model_df <- transform(current_model_df, error = error)
+      model_hash <- create_model_hash(current_model_df)
+      list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
     }
 
     error <- base_error
@@ -412,10 +456,14 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     print(plot(base))
   }
 
+  final_results <- rbind_fill(list_of_runs)
+  rownames(final_results) <- NULL
+  cols <- names(final_results)
+  new_order <- c(setdiff(cols, c("error", "metric")), intersect(cols, c("error", "metric")))
+  final_results <- final_results[, new_order]
+
   return(list(
     results = final_results[order(final_results$metric), ],
-    best_model = final_results[order(final_results$metric), ][1, ],
-    variability = variability,
-    error = error
+    best_model = final_results[order(final_results$metric), ][1, ]
   ))
 }
