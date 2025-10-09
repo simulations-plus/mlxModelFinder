@@ -462,8 +462,18 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   new_order <- c(setdiff(cols, c("error", "metric")), intersect(cols, c("error", "metric")))
   final_results <- final_results[, new_order]
 
+  best_index <- rownames(final_results[which(final_results$metric == min(final_results$metric)), ])
+
+  best_model_path <- if (settings$save_mode == "best")
+    file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+  else if (settings$save_mode == "all")
+    file.path(settings$result_folder, "autoBuild", paste0("run_", best_index, ".mlxtran"))
+  else
+    NULL
+
   return(list(
     results = final_results[order(final_results$metric), ],
-    best_model = final_results[order(final_results$metric), ][1, ]
+    best_model = final_results[order(final_results$metric), ][1, ],
+    best_model_path = best_model_path
   ))
 }
