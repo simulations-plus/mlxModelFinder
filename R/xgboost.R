@@ -186,11 +186,6 @@ train_xgb_and_propose <- function(
   num_levels <- sapply(runs_encoded[all_feature_cols], function(col) length(levels(col)))
   constant_cols <- names(num_levels[num_levels < 2])
 
-  if (length(constant_cols) > 0) {
-    warning("The following columns have only one level and will be removed from the model: ",
-            paste(constant_cols, collapse = ", "))
-  }
-
   valid_feature_cols <- setdiff(all_feature_cols, constant_cols)
 
   if (length(valid_feature_cols) == 0) {
