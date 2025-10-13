@@ -134,7 +134,7 @@ getModelName <- function(library, filters = list()) {
       output_params = updates$output_params
     )
 
-    path <- tempfile("model", fileext = ".txt")
+    path <- file.path(tempdir(), paste0(paste0(unique(updates$input_params), collapse = "_"), ".txt"))
     writeLines(model_content, path)
     return(path)
   }
