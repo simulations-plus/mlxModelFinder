@@ -66,7 +66,7 @@
 #'           Default: `TRUE`.
 #'     \item \strong{max_models}: Integer cap on the total number of models to evaluate. Default: `1e6`.
 #'     \item \strong{iiv_favor_true}: Logical; bias exploration toward keeping IIV Default: `FALSE`.
-#'     \item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: `FALSE`. Limited testing performed.
+#'     \item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: `TRUE`.
 #'     \item \strong{xgboost_model_nb}: Integer; number of boosting models to maintain if \code{xgboost = TRUE}. Default: `5`.
 #'     \item \strong{local_search}: Logical; enable optional local IIV refinement around good candidates (ACO). Default: `FALSE`.
 #'   }
@@ -155,6 +155,7 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   op = options()
   op$lixoft_notificationOptions$warnings = 1
   op$lixoft_notificationOptions$info = 1
+  op$lixoft_notificationOptions$errors = 1
   op$cli.progress_show_after = 0
   options(op)
 
@@ -202,7 +203,7 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     max_models = 1000000,
     iiv_favor_true = FALSE,
     clip = FALSE,
-    xgboost = FALSE,
+    xgboost = TRUE,
     xgboost_model_nb = 5,
     local_search = FALSE
   )
@@ -252,6 +253,12 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
 
   validate_obsidtouse(settings)
 
+  init_cov <- lixoftConnectors::getIndividualParameterModel()$covariateModel
+  init_cov <- lapply(init_cov, function(x) {
+    x[] <- FALSE
+    return(x)
+  })
+
   init_var <- lixoftConnectors::getIndividualParameterModel()$variability
   init_var <- lapply(names(init_var), function(nm) {
     x <- init_var[[nm]]
@@ -267,16 +274,12 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   init_cor <- lixoftConnectors::getIndividualParameterModel()$correlationBlocks
   init_cor <- lapply(init_cor, function(x) list())
 
-  init_cov <- lixoftConnectors::getIndividualParameterModel()$covariateModel
-  init_cov <- lapply(init_cov, function(x) {
-    x[] <- FALSE
-    return(x)
-  })
-
   lixoftConnectors::setIndividualParameterModel(list(
-    variability = init_var,
     correlationBlocks = init_cor,
     covariateModel = init_cov
+  ))
+  lixoftConnectors::setIndividualParameterModel(list(
+    variability = init_var
   ))
 
   settings$result_folder <- lixoftConnectors::getProjectSettings()$directory
