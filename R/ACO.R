@@ -166,7 +166,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     cli::cli_progress_done()
 
     # --- Search with XGBoost if stagnating ---
-    if (settings$xgboost && settings$iiv && stagnation_count == 5) {
+    if (settings$xgboost && settings$iiv && stagnation_count == 7) {
       cli::cli_alert_info("Trying to find a good model using XGBoost...")
 
       list_of_runs_df <- do.call(rbind, list_of_runs)
