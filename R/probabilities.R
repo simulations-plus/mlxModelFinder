@@ -1,3 +1,76 @@
+get_pk_parameters <- function(filters, requiredFilters) {
+  params <- character(0)
+
+  # --- Administration and Bioavailability ---
+  if (!is.null(filters$bioavailability) &&
+      "true" %in% filters$bioavailability &&
+      requiredFilters$administration == "oralBolus") {
+    params <- c(params, "F")
+  }
+
+  # --- Delay ---
+  if (!is.null(filters$delay) && "lagTime" %in% filters$delay) {
+    params <- c(params, "Tlag")
+  }
+
+  # --- Absorption ---
+  if (!is.null(filters$absorption)) {
+    for (absorption_model in filters$absorption) {
+      params <- switch(
+        absorption_model,
+        "zeroOrder" = c(params, "Tk0"),
+        "firstOrder" = c(params, "ka"),
+        "sigmoid" = c(params, "ka", "Tk0s"),
+        "transitCompartments" = c(params, "ka", "Mtt", "Ktr"),
+        params
+      )
+    }
+  }
+
+  # --- Distribution and Elimination ---
+  is_clearance_param <- requiredFilters$parametrization == "clearance"
+
+  # --- Elimination ---
+  if (!is.null(filters$elimination)) {
+    for (elimination_model in filters$elimination) {
+      if (elimination_model %in% c("linear", "combined")) {
+        if (is_clearance_param) {
+          params <- c(params, "Cl")
+        } else {
+          params <- c(params, "k")
+        }
+      }
+      if (elimination_model %in% c("MichaelisMenten", "combined")) {
+        params <- c(params, "Vm", "Km")
+      }
+    }
+  }
+
+  # --- Distribution ---
+  if (!is.null(filters$distribution)) {
+    for (dist_model in filters$distribution) {
+      if (dist_model == "1compartment") {
+        params <- c(params, "V")
+      } else if (dist_model == "2compartments") {
+        params <- c(params, "V1", "V2")
+        if (is_clearance_param) {
+          params <- c(params, "Q")
+        } else {
+          params <- c(params, "k12", "k21")
+        }
+      } else if (dist_model == "3compartments") {
+        params <- c(params, "V1", "V2", "V3")
+        if (is_clearance_param) {
+          params <- c(params, "Q2", "Q3")
+        } else {
+          params <- c(params, "k12", "k21", "k13", "k31")
+        }
+      }
+    }
+  }
+
+  return(unique(params))
+}
 probabilities <- function(x, weights_override = NULL) {
   filters <- sapply(x, `[`, seq(max(sapply(x, length))))
 
@@ -13,12 +86,13 @@ probabilities <- function(x, weights_override = NULL) {
   list(probas = probas, filters = filters, weights = weights)
 }
 
-iiv_probabilities <- function(library, favor_true = FALSE) {
+iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FALSE) {
   if (library == "pk") {
-    param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
-                    "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
-                    "k", "k12", "k21", "k13", "k31",
-                    "Vm", "Km", "F")
+    # param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
+    #                 "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
+    #                 "k", "k12", "k21", "k13", "k31",
+    #                 "Vm", "Km", "F")
+    param_list <- get_pk_parameters(filters, requiredFilters)
     param_map <- lapply(param_list, function(x) c(TRUE, FALSE))
     names(param_map) <- param_list
   } else {

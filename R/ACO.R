@@ -9,7 +9,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
 
   # Initialize probabilities for interindividual variability (IIV)
   if (settings$iiv) {
-    probas_iiv <- iiv_probabilities(library, favor_true = settings$iiv_favor_true)
+    probas_iiv <- iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true)
     iiv_cols <- colnames(probas_iiv$filters)
   }
 

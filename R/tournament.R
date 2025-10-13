@@ -8,7 +8,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
 
   # Initialize probabilities for interindividual variability (IIV)
   if (settings$iiv) {
-    probas_iiv <- iiv_probabilities(library)
+    probas_iiv <- iiv_probabilities(library, filters, requiredFilters)
   }
 
   # Initialize probabilities for error model
