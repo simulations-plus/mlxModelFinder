@@ -23,11 +23,13 @@ make_applicable <- function(struct_features, param_df, param_cols, requiredFilte
   is_3cpt             <- is_rule("3compartments")
   is_linear_elim      <- is_rule("linear")
   is_mm_elim          <- is_rule("MichaelisMenten")
-  has_bioavailability <- is_rule("bioavailability")
+  is_bioavailability_true <- is_rule("true")
+  is_bioavailability_false <- is_rule("false")
   is_clearance_param  <- is_rule("clearance")
   is_rate_param       <- is_rule("rate")
 
   has_any_absorption  <- is_first_order | is_zero_order | is_sigmoid | is_transit
+  has_bioavailability <- is_bioavailability_true | is_bioavailability_false
 
   # --- Vectorized application of rules ---
   set_na_if <- function(df, condition, cols) {
