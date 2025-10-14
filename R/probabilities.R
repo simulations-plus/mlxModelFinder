@@ -73,6 +73,7 @@ get_pk_parameters <- function(filters, requiredFilters) {
 }
 probabilities <- function(x, weights_override = NULL) {
   filters <- sapply(x, `[`, seq(max(sapply(x, length))))
+  if (is.vector(filters)) filters <- t(as.matrix(filters))
 
   if (is.null(weights_override)) {
     weights <- apply(filters, 1:2, function(x) as.numeric(!is.na(x)))
@@ -83,6 +84,8 @@ probabilities <- function(x, weights_override = NULL) {
   }
 
   probas <- apply(weights, 2, function(col) col / sum(col, na.rm = TRUE))
+  if (is.vector(probas)) probas <- t(as.matrix(probas))
+
   list(probas = probas, filters = filters, weights = weights)
 }
 
@@ -143,6 +146,8 @@ updateProbabilities <- function(obj, runs, rho = 0.4, clip = FALSE,
       p
     }
   })
+
+  if (is.vector(obj$probas)) obj$probas <- t(as.matrix(obj$probas))
 
   return(obj)
 }

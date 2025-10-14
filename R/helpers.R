@@ -204,6 +204,7 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
 }
 
 tidyProbabilities <- function(probas, iteration) {
+
   col_names <- colnames(probas$probas)
   list_of_cols <- vector("list", length(col_names))
   names(list_of_cols) <- col_names
