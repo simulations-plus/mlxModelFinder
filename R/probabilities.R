@@ -52,18 +52,16 @@ get_pk_parameters <- function(filters, requiredFilters) {
       if (dist_model == "1compartment") {
         params <- c(params, "V")
       } else if (dist_model == "2compartments") {
-        params <- c(params, "V1", "V2")
         if (is_clearance_param) {
-          params <- c(params, "Q")
+          params <- c(params, "Q", "V1", "V2")
         } else {
-          params <- c(params, "k12", "k21")
+          params <- c(params, "k12", "k21", "V")
         }
       } else if (dist_model == "3compartments") {
-        params <- c(params, "V1", "V2", "V3")
         if (is_clearance_param) {
-          params <- c(params, "Q2", "Q3")
+          params <- c(params, "Q2", "Q3", "V1", "V2", "V3")
         } else {
-          params <- c(params, "k12", "k21", "k13", "k31")
+          params <- c(params, "k12", "k21", "k13", "k31", "V")
         }
       }
     }
