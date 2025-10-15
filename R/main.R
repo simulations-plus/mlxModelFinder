@@ -68,7 +68,6 @@
 #'     \item \strong{iiv_favor_true}: Logical; bias exploration toward keeping IIV Default: `FALSE`.
 #'     \item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: `TRUE`.
 #'     \item \strong{xgboost_model_nb}: Integer; number of boosting models to maintain if \code{xgboost = TRUE}. Default: `5`.
-#'     \item \strong{local_search}: Logical; enable optional local IIV refinement around good candidates (ACO). Default: `FALSE`.
 #'   }
 #' @param metric_func (optional) **Zero-argument** function that returns a single numeric
 #'   score for the **last run model** (lower is better). Use `lixoftConnectors` inside
@@ -194,7 +193,7 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     output = NULL,
     convergence_threshold = 0.75,
     initial_iiv_forced_iter = 3,
-    rho = ifelse(is.null(settings$iiv) || !settings$iiv, 0.4, 0.6),
+    rho = 0.4,
     save_mode = "best",
     keys = keys,
     plot = TRUE,
@@ -205,7 +204,8 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
     clip = FALSE,
     xgboost = TRUE,
     xgboost_model_nb = 5,
-    local_search = FALSE
+    local_search = FALSE,
+    table_func = NULL
   )
 
   # --- Setup ---
