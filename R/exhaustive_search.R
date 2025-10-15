@@ -68,7 +68,11 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
       }
 
       model_info$metric <- metric
-      res[[length(res) + 1]] <- model_info
+      if (!is.null(settings$table_func))
+        res[[length(res) + 1]] <- cbind(model_info, settings$table_func())
+      else
+        res[[length(res) + 1]] <- model_info
+
 
       if (!is.null(settings$output)) {
         results_df <- do.call(rbind, res)
@@ -83,5 +87,9 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
   cli::cli_progress_done()
   cli::cli_alert_success("Done")
-  return(res)
+
+  results_df <- do.call(rbind, res)
+  rownames(results_df) <- NULL
+
+  return(results_df)
 }

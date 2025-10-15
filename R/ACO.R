@@ -6,32 +6,16 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   # Initialize probabilities for the structural model components
   probas_struct <- probabilities(filters)
   struct_cols <- colnames(probas_struct$filters)
-
-  # Initialize probabilities for interindividual variability (IIV)
-  if (settings$iiv) {
-    probas_iiv <- iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true)
-    iiv_cols <- colnames(probas_iiv$filters)
-  }
-
-  # Initialize probabilities for error model
-  if (settings$error) {
-    probas_error <- probabilities(list(error = c("constant", "proportional", "combined1", "combined2")))
-  }
+  probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true) else NULL
+  iiv_cols <- if (settings$iiv) colnames(probas_iiv$filters) else NULL
+  probas_error <- if (settings$error) probabilities(list(error = c("constant", "proportional", "combined1", "combined2"))) else NULL
 
   # --- ACO State Variables ---
   iteration <- 0
   stagnation_count <- -1
   models_tested <- 0
-  n_ants <- settings$N
   best_metric <- Inf
   list_of_runs <- list()
-  history_list <- list(tidyProbabilities(probas_struct, iteration = 0))
-  if (settings$error)
-    history_list[[1]] <- rbind(history_list[[1]], tidyProbabilities(probas_error, iteration))
-  if (settings$iiv)
-    history_list[[1]] <- rbind(history_list[[1]], tidyProbabilities(probas_iiv, iteration))
-
-  iteration_progress <- list()
 
   # Pre-populate with previous runs, if provided
   if (!is.null(settings$previous_runs) && nrow(settings$previous_runs) > 0) {
@@ -44,25 +28,88 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
 
     prev_runs_list <- split(settings$previous_runs, seq(nrow(settings$previous_runs)))
     names(prev_runs_list) <- hashes
+  } else {
+    prev_runs_list <- NULL
   }
+
+  # --- Helper Function to Evaluate a Single Model ---
+  # This function will be a closure, modifying variables in the parent environment
+  evaluate_model <- function(model_df_row) {
+    model_hash <- create_model_hash(model_df_row)
+
+    # Check if model has been run before (in this run or previous runs)
+    if (model_hash %in% names(list_of_runs) || model_hash %in% names(prev_runs_list)) {
+      if (model_hash %in% names(prev_runs_list)) {
+        # It's a pre-seeded run, move it to the main list
+        list_of_runs[[model_hash]] <<- prev_runs_list[[model_hash]]
+        prev_runs_list[[model_hash]] <<- NULL
+      }
+      result <- list_of_runs[[model_hash]]
+      if (result$metric < best_metric) {
+        best_metric <<- result$metric
+        stagnation_count <<- -1
+      }
+      return(result)
+    }
+
+    # --- If model is new, run it ---
+    models_tested <<- models_tested + 1
+    model_struct <- model_df_row[, struct_cols, drop = FALSE]
+    model_name <- getModelName("pk", filters = append(as.list(model_struct), requiredFilters))
+
+    iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
+    error_model <- if (settings$error) model_df_row[, "error", drop = FALSE] else NULL
+
+    runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+
+    metric <- metric_func()
+
+    improved <- metric < best_metric
+    if (improved) {
+      best_metric <<- metric
+      stagnation_count <<- -1
+    }
+
+    # Use the provided save function
+    save_project(
+      mode = settings$save_mode,
+      path_all = file.path(settings$result_folder, "autoBuild"),
+      path_best = file.path(settings$result_folder, "autoBuild"),
+      idx = models_tested,
+      improved = improved
+    )
+
+    # Store results
+    result <- model_df_row
+    result$metric <- metric
+
+    if (!is.null(settings$table_func))
+      result <- cbind(result, settings$table_func())
+
+    list_of_runs[[model_hash]] <<- result
+
+    return(result)
+  }
+
+  # --- History Tracking ---
+  log_history <- function(iter) {
+    history <- tidyProbabilities(probas_struct, iter)
+    if (settings$error) history <- rbind(history, tidyProbabilities(probas_error, iter))
+    if (settings$iiv) history <- rbind(history, tidyProbabilities(probas_iiv, iter))
+    return(history)
+  }
+  history_list <- list(log_history(0))
+  iteration_progress <- list()
 
   # --- Main ACO Loop ---
   repeat {
     iteration <- iteration + 1
     cli::cli_h2("Iteration {iteration}")
-    cli::cli_progress_bar(
-      format = "Running models {cli::pb_bar} | {i}/{n_ants}",
-      total = n_ants,
-      clear = FALSE
-    )
 
-    # Sample structural models based on their probabilities
-    p_iiv <- if (settings$iiv) probas_iiv else NULL
-    p_err <- if (settings$error) probas_error else NULL
-    models <- models(probas_struct, n_ants, p_iiv = p_iiv, p_err = p_err)
+    # --- Generate Models (Ants) ---
+    models <- models(probas_struct, settings$N, p_iiv = probas_iiv, p_err = probas_error)
 
-    # --- Pre-processing of Sampled Models ---
-    # Force IIV exploration in early iterations
+    # Pre-processing of Sampled Models
     if (settings$iiv && iteration <= settings$initial_iiv_forced_iter) {
       models$iiv[] <- TRUE
     }
@@ -74,12 +121,9 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
         models$struct[is_special_abs, "delay"] <- NA
     }
 
-    # This list will hold the results for the current iteration
-    iter_results_list <- vector("list", n_ants)
-
-    # --- Compile models in a data.frame ---
+    # Combine all model components into a single data frame
     if (settings$iiv) {
-      for (i in 1:n_ants) {
+      for (i in 1:settings$N) {
         model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
         lixoftConnectors::setStructuralModel(model)
         param_names <- lixoftConnectors::getIndividualParameterModel()$name
@@ -95,147 +139,32 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     if (settings$error)
       models_df <- cbind(models_df, data.frame(error = models$error[, "error"]))
 
-    # --- Evaluate Models (Ants) ---
-    for (i in 1:n_ants) {
-
-      model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
-
-      current_model_df <- models_df[i, ]
-
-      # Generate a unique hash for the current model configuration
-      model_hash <- create_model_hash(current_model_df)
-
-      # Check if this exact model has been run before
-      if (model_hash %in% names(list_of_runs) || !is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
-
-        if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
-          models_tested <- models_tested + 1
-          list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
-          prev_runs_list[[model_hash]] <- NULL
-        }
-
-        metric <- list_of_runs[[model_hash]]$metric
-
-        if (metric < best_metric) {
-          best_metric <- metric
-          stagnation_count <- -1
-        }
-
-        iter_results_list[[i]] <- list_of_runs[[model_hash]]
-        cli::cli_progress_update()
-        next
-      }
-
-      # If model is new, run it
-      iiv_params <- if (settings$iiv) as.data.frame(models$iiv)[i, ] else NULL
-      error_model <- if (settings$error) as.data.frame(models$error)[i, ] else NULL
-
-      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
-
-      models_tested <- models_tested + 1
-
-      # Calculate the performance metric
-      metric <- metric_func()
-
-      if (settings$save_mode == "all")
-        lixoftConnectors::saveProject(file.path(
-          settings$result_folder,
-          "autoBuild",
-          paste0("run_", models_tested, ".mlxtran")
-        ))
-
-      if (metric < best_metric) {
-        best_metric <- metric
-        if (settings$save_mode == "best")
-          lixoftConnectors::saveProject(
-            file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-          )
-        stagnation_count <- -1
-      }
-
-      # Store results
-      model_info <- current_model_df
-      model_info$metric <- metric
-
-      # Add the new result to the main history and the current iteration's list
-      list_of_runs[[model_hash]] <- model_info
-      iter_results_list[[i]] <- model_info
-
+    # --- Evaluate Models ---
+    cli::cli_progress_bar(format = "Running models {cli::pb_bar} | {i}/{nrow(models_df)}", total = nrow(models_df), clear = FALSE)
+    iter_results_list <- vector("list", nrow(models_df))
+    for(i in 1:nrow(models_df)) {
+      iter_results_list[[i]] <- evaluate_model(models_df[i, , drop = FALSE])
       cli::cli_progress_update()
     }
     cli::cli_progress_done()
 
     # --- Search with XGBoost if stagnating ---
-    if (settings$xgboost && settings$iiv && stagnation_count == 7) {
-      cli::cli_alert_info("Trying to find a good model using XGBoost...")
+    if (settings$xgboost && settings$iiv && settings$error && stagnation_count == 2) {
+      cli::cli_alert_info("Stagnation detected. Searching with XGBoost...")
 
       list_of_runs_df <- do.call(rbind, list_of_runs)
       rownames(list_of_runs_df) <- NULL
-      runs <- train_xgb_and_propose(
+
+      xgb_runs <- train_xgb_and_propose(
         list_of_runs = list_of_runs_df,
-        probas_struct = probas_struct,
-        probas_iiv = probas_iiv,
-        probas_error = probas_error,
-        N = settings$xgboost_model_nb,
-        requiredFilters = requiredFilters
+        probas_struct = probas_struct, probas_iiv = probas_iiv, probas_error = probas_error,
+        N = settings$xgboost_model_nb, requiredFilters = requiredFilters
       )
 
-      for (i in 1:nrow(runs)) {
-        current_model_df <- runs[i, ]
-        current_model_df$pred_score <- NULL
-        iiv_params <- runs[i, iiv_cols]
-        error_model <- if (settings$error) runs[i, "error"] else NULL
+      xgb_runs$pred_score <- NULL
+      xgb_results <- lapply(split(xgb_runs, seq(nrow(xgb_runs))), evaluate_model)
 
-        model <- getModelName("pk", filters = append(runs[i, struct_cols], requiredFilters))
-
-        model_hash <- create_model_hash(current_model_df)
-
-        if (!is.null(settings$previous_runs) && model_hash %in% names(prev_runs_list)) {
-          list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
-          prev_runs_list[[model_hash]] <- NULL
-
-          metric <- list_of_runs[[model_hash]]$metric
-          iter_results_list[[length(iter_results_list) + 1]] <- list_of_runs[[model_hash]]
-
-          if (metric < best_metric) {
-            best_metric <- metric
-            stagnation_count <- -1
-          }
-
-          next
-        }
-
-        runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
-
-        models_tested <- models_tested + 1
-
-        # Calculate the performance metric
-        metric <- metric_func()
-
-        if (settings$save_mode == "all")
-          lixoftConnectors::saveProject(file.path(
-            settings$result_folder,
-            "autoBuild",
-            paste0("run_", models_tested, ".mlxtran")
-          ))
-
-        if (metric < best_metric) {
-          best_metric <- metric
-          if (settings$save_mode == "best")
-            lixoftConnectors::saveProject(
-              file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-            )
-          stagnation_count <- -1
-        }
-
-        # Store results
-        model_info <- current_model_df
-        model_info$metric <- metric
-
-        # Add the new result to the main history and the current iteration's list
-        list_of_runs[[model_hash]] <- model_info
-        iter_results_list[[length(iter_results_list) + 1]] <- model_info
-      }
+      iter_results_list <- c(iter_results_list, xgb_results)
     }
 
     # --- Add global best ---
@@ -333,11 +262,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     cli::cli_end(ulid)
 
     # Store and plot probability history
-    history_list[[iteration + 1]] <- tidyProbabilities(probas_struct, iteration)
-    if (settings$error)
-      history_list[[iteration + 1]] <- rbind(history_list[[iteration + 1]], tidyProbabilities(probas_error, iteration))
-    if (settings$iiv)
-      history_list[[iteration + 1]] <- rbind(history_list[[iteration + 1]], tidyProbabilities(probas_iiv, iteration))
+    history_list[[iteration + 1]] <- log_history(iteration)
 
     if (settings$plot)
       print(plotProbabilities(history_list))

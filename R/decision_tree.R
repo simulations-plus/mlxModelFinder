@@ -140,6 +140,9 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
     metric <- metric_func()
 
+    if (!is.null(settings$table_func))
+      table <- settings$table_func()
+
     save_project(settings$save_mode,
                  path_all  = file.path(settings$result_folder, "autoBuild"),
                  path_best = file.path(settings$result_folder, "autoBuild"),
@@ -164,7 +167,11 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   # Store results
   base_metric <- metric
   model_hash <- create_model_hash(current_model_df)
-  list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
+
+  if (!is.null(settings$table_func))
+    list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), table)
+  else
+    list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
 
   levels_map <- featureLevels(library)
 
@@ -277,7 +284,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
                      idx = models_tested,
                      improved = metric < base_metric)
 
-        list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
+        if (!is.null(settings$table_func))
+          list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), settings$table_func())
+        else
+          list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
 
       }
 
@@ -368,7 +378,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
         }
 
         model_hash <- create_model_hash(current_model_df)
-        list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
+        if (!is.null(settings$table_func))
+          list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), settings$table_func())
+        else
+          list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
       }
 
       variability <- base_params
@@ -433,7 +446,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       }
       current_model_df <- transform(current_model_df, error = error)
       model_hash <- create_model_hash(current_model_df)
-      list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
+      if (!is.null(settings$table_func))
+        list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), settings$table_func())
+      else
+        list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
     }
 
     error <- base_error
