@@ -19,7 +19,8 @@ Imports:
 Suggests:
     htmltools,
     plotly,
-    testthat,
-	data.tree,
-	DiagrammeR,
-	xgboost
+    testthat (>= 3.0.0),
+    data.tree,
+    DiagrammeR,
+    xgboost
+Config/testthat/edition: 3
