@@ -129,6 +129,21 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
   models_tested <- 1
 
+  current_model_df <- base_model_df
+
+  if (settings$iiv) {
+    model <- getModelName(library, filters = append(current_model_df, requiredFilters))
+    lixoftConnectors::setStructuralModel(model)
+    iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+    current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
+  }
+
+  if (settings$error) {
+    current_model_df <- transform(current_model_df, error = "combined1")
+  }
+
+  model_hash <- create_model_hash(current_model_df)
+
   if (!is.null(prev_runs_list) && model_hash %in% names(prev_runs_list)) {
 
     list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
@@ -151,22 +166,9 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
   }
 
-  current_model_df <- base_model_df
-
-  if (settings$iiv) {
-    model <- getModelName(library, filters = append(current_model_df, requiredFilters))
-    lixoftConnectors::setStructuralModel(model)
-    iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
-    current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
-  }
-
-  if (settings$error) {
-    current_model_df <- transform(current_model_df, error = "combined1")
-  }
-
   # Store results
   base_metric <- metric
-  model_hash <- create_model_hash(current_model_df)
+
 
   if (!is.null(settings$table_func))
     list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), table)
