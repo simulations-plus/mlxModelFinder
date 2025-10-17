@@ -74,7 +74,7 @@ validate_filters <- function(filters, requiredFilters) {
   return(TRUE)
 }
 validate_algorithm <- function(algorithm) {
-  allowed_algorithms <- c("ACO", "tournament", "exhaustive_search", "decision_tree")
+  allowed_algorithms <- c("ACO", "exhaustive_search", "decision_tree")
   if (!is.character(algorithm) || length(algorithm) != 1 || !(algorithm %in% allowed_algorithms)) {
     stop("Error: 'algorithm' must be one of 'ACO', 'tournament', 'exhaustive_search', or 'decision_tree'.", call. = FALSE)
   }
