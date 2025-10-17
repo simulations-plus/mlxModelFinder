@@ -236,3 +236,85 @@ initialValues <- function(project) {
   return(file.path(tempdir(), "pop_init.mlxtran"))
 }
 
+#' @title Create a Function to Apply Initial Parameter Estimates
+#' @description A factory function that generates a new function to apply a list of
+#'   initial parameter estimates to a Monolix project file.
+#'
+#' @details
+#' The function created by `applyInitials` performs the following steps:
+#' \enumerate{
+#'   \item Loads the Monolix project specified by `path`.
+#'   \item Maps the names from `init_list` to the project's population parameter
+#'     names. It automatically appends "_pop" to names that match individual
+#'     parameter names (e.g., "ka" becomes "ka_pop").
+#'   \item Updates the 'initialValue' for the matched population parameters.
+#'   \item Saves the project, either as a copy or by overwriting the original,
+#'     based on the `save_as_copy` argument.
+#'   \item Returns the file path of the saved project.
+#' }
+#' This factory is useful for creating reusable functions to test different
+#' sets of initial estimates in a modeling workflow.
+#'
+#' @param init_list A named list or numeric vector. Names should correspond to
+#'   individual parameter names (e.g., "ka") or population parameter names
+#'   (e.g., "ka_pop"). The values are the initial estimates to be set.
+#' @param save_as_copy Logical. If `TRUE` (the default), the modified project is
+#'   saved as a copy in a temporary directory with an "_init" suffix. If `FALSE`,
+#'   the original project file is overwritten.
+#'
+#' @return Returns a new function that takes a single argument, `path`, which is
+#'   the file path to a Monolix (`.mlxtran`) project. This returned function
+#'   modifies the project with the specified initial estimates and returns the
+#'   path to the saved project file.
+#'
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' # Define a list of initial estimates
+#' my_inits <- list(ka = 2.5, V = 10, Cl = 0.5)
+#'
+#' # Create a function that will apply these estimates and save as a copy
+#' res <- findModel(
+#'   project = "theophylline_project.mlxtran",
+#'   library = "pk",
+#'   requiredFilters = list(administration = "oral", parametrization = "clearance"),
+#'   filters = list(distribution = c("1compartment", "2compartments"),
+#'                  absorption = "firstOrder",
+#'                  elimination = "linear"),
+#'   initial_func = applyInitials(my_inits, save_as_copy = TRUE)
+#'   )
+#' }
+applyInitials <- function(init_list, save_as_copy = TRUE) {
+  force(init_list)
+  function(path) {
+    lixoftConnectors::loadProject(path)
+
+    pop <- lixoftConnectors::getPopulationParameterInformation()
+    ip_names <- lixoftConnectors::getIndividualParameterModel()$name
+
+    replacements <- numeric(0)
+    for (nm in names(init_list)) {
+      target <- if (nm %in% ip_names) paste0(nm, "_pop") else nm
+      if (target %in% pop$name) {
+        replacements[target] <- as.numeric(init_list[[nm]])
+      }
+    }
+
+    if (length(replacements)) {
+      idx <- match(names(replacements), pop$name)
+      pop$initialValue[idx] <- unname(replacements)
+      lixoftConnectors::setPopulationParameterInformation(pop)
+    }
+
+    if (isTRUE(save_as_copy)) {
+      base <- tools::file_path_sans_ext(basename(path))
+      out  <- file.path(tempdir(), paste0(base, "_init.mlxtran"))
+      lixoftConnectors::saveProject(projectFile = out)
+      return(out)
+    } else {
+      lixoftConnectors::saveProject(projectFile = path)
+      return(path)
+    }
+  }
+}
