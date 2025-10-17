@@ -91,5 +91,6 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
   results_df <- do.call(rbind, res)
   rownames(results_df) <- NULL
 
-  return(results_df)
+  return(list(results = results_df,
+              best_model = results_df[order(results_df$metric), ][1, ]))
 }
