@@ -41,25 +41,25 @@ to explore. For the \code{"pk"} library:
 If a component is omitted, \strong{all} of its options are included in the search.}
 
 \item{algorithm}{(optional) Search algorithm. One of
-\code{"ACO"}, \code{"tournament"}, \code{"exhaustive_search"}, \code{"decision_tree"}.
+\code{"ACO"}, \code{"exhaustive_search"}, \code{"decision_tree"}.
 If \code{NULL}, defaults to \code{"ACO"} when \code{settings$iiv = TRUE}, otherwise \code{"decision_tree"}.}
 
 \item{settings}{(optional) Named list of search/algorithm settings. Unless stated,
 defaults are chosen adaptively (see below). Supported entries:
 \itemize{
-\item \strong{N}: Integer; models per iteration (ants for ACO; wins/cohort size for Tournament).
+\item \strong{N}: Integer; models per iteration (ants for ACO).
 Default: \code{10} (no IIV) or \code{20} (with IIV).
 \item \strong{findIIV}: Logical; explore interindividual variability (IIV). Default: \code{FALSE}.
 \item \strong{findError}: Logical; explore residual error model. Default: \code{FALSE}.
 \item \strong{seed}: Integer; RNG seed for reproducibility. Default: \code{123456}.
 \item \strong{previous_runs}: Optional path to a CSV of past runs to warm-start/learn from. Default: \code{NULL}.
 \item \strong{output}: Optional CSV path; if provided, results are appended incrementally. Default: \code{NULL}.
-\item \strong{initial_iiv_forced_iter} (ACO/Tournament): Integer; number of initial iterations
+\item \strong{initial_iiv_forced_iter} (ACO): Integer; number of initial iterations
 where IIV is forced on all parameters to encourage exploration. Default: \code{3}.
-\item \strong{rho} (ACO/Tournament): Learning/evaporation rate. Default: \code{0.4} (no IIV) or \code{0.6} (with IIV).
+\item \strong{rho} (ACO): Learning/evaporation rate. Default: \code{0.4} (no IIV) or \code{0.6} (with IIV).
 \item \strong{obsIDToUse}: Character/integer; which observation ID to use (required if the project has multiple).
 \item \strong{plot}: Logical; if \code{TRUE} and optional deps are available, render progress
-(DiagrammeR/data.tree for Decision Tree; plotly/htmltools for ACO/Tournament). Default: \code{TRUE}.
+(DiagrammeR/data.tree for Decision Tree; plotly/htmltools for ACO). Default: \code{TRUE}.
 \item \strong{linearization}: Logical; if \code{TRUE}, use linearization for log-likelihood in the default metric.
 Default: \code{FALSE}.
 \item \strong{save_mode}: How to persist Monolix runs during training. One of:
@@ -76,9 +76,9 @@ during decision tree (auto-derived from administration).
 Default: \code{TRUE}.
 \item \strong{max_models}: Integer cap on the total number of models to evaluate. Default: \code{1e6}.
 \item \strong{iiv_favor_true}: Logical; bias exploration toward keeping IIV Default: \code{FALSE}.
-\item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: \code{FALSE}. Limited testing performed.
+\item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: \code{TRUE}.
 \item \strong{xgboost_model_nb}: Integer; number of boosting models to maintain if \code{xgboost = TRUE}. Default: \code{5}.
-\item \strong{local_search}: Logical; enable optional local IIV refinement around good candidates (ACO). Default: \code{FALSE}.
+\item \strong{table_func}: function that allows you to output additional information about each run. See online doc for more information.
 }}
 
 \item{metric_func}{(optional) \strong{Zero-argument} function that returns a single numeric
@@ -94,9 +94,15 @@ path) and \strong{returns a project path} (same or new) after setting initial va
 If \code{NULL}, the package uses its internal/default initializer.}
 }
 \value{
-A data frame where each row corresponds to a tested model, including:
-structural choices, IIV/error settings, convergence status, metric value, timing,
-and (if enabled) paths to saved Monolix runs.
+A list that contains:
+\itemize{
+\item \strong{results}: a data frame where each row corresponds to a tested model, including:
+structural choices, IIV/error settings, metric value,
+\item \strong{best_model}: a data frame with one row corresponding to the best model,
+\item \strong{best_path}: path to the saved Monolix runs corresponding to the best model (if save_mode is \code{all} or \code{best}),
+\item \strong{iteration_progress}: progress per iteration for ACO,
+\item \strong{prob_history}: list of sampling probabilities at the end of each iteration for ACO.
+}
 }
 \description{
 Automates structural model selection for PK models in Monolix via
@@ -119,7 +125,7 @@ suggested packages are installed.
 \examples{
 \dontrun{
 # Example 1: Default search with oral clearance models and additional filters
-findModel(
+res <- findModel(
   project = file.path(getDemoPath(), "1.creating_and_using_models",
                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
   library = "pk",
@@ -129,7 +135,7 @@ findModel(
 )
 
 # Example 2: Oral bolus rate-parametrized models on an IV/Oral project w/o plotting progress
-findModel(
+res <- findModel(
   project = file.path(getDemoPath(), "6.PK_models", "6.2.multiple_routes",
                       "ivOral1_project.mlxtran"),
   library = "pk",
@@ -140,7 +146,7 @@ findModel(
 )
 
 # Example 3: Bolus route with IIV and residual error estimation, saving progress
-findModel(
+res <- findModel(
   project = file.path(getDemoPath(), "6.PK_models", "6.1.single_route",
                       "bolusMixed_project.mlxtran"),
   library = "pk",
@@ -149,7 +155,7 @@ findModel(
 )
 
 # Example 4: Exhaustive search over oral clearance models
-findModel(
+res <- findModel(
   project = file.path(getDemoPath(), "1.creating_and_using_models",
                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
   library = "pk",
@@ -157,13 +163,14 @@ findModel(
   algorithm = "exhaustive_search"
 )
 
-# Example 5: Decision tree search strategy
-findModel(
+# Example 5: Decision tree search strategy even though searching for IIV
+res <- findModel(
   project = file.path(getDemoPath(), "1.creating_and_using_models",
                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
   library = "pk",
   requiredFilters = list(administration = "oral", parametrization = "clearance"),
-  algorithm = "decision_tree"
+  algorithm = "decision_tree",
+  settings = list(findIIV = TRUE)
 )
 }
 
