@@ -134,7 +134,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   if (settings$iiv) {
     model <- getModelName(library, filters = append(current_model_df, requiredFilters))
     lixoftConnectors::setStructuralModel(model)
-    iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+    iiv_params <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability[[1]]))
     current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
   }
 
@@ -240,7 +240,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       if (settings$iiv) {
         model <- getModelName(library, filters = append(struct_model_df, requiredFilters))
         lixoftConnectors::setStructuralModel(model)
-        iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+        iiv_params <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability[[1]]))
         current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
       }
 
@@ -443,7 +443,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
       current_model_df <- base_model_df
       if (settings$iiv) {
-        iiv_params <- as.data.frame(as.list(getIndividualParameterModel()$variability[[1]]))
+        iiv_params <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability[[1]]))
         current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
       }
       current_model_df <- transform(current_model_df, error = error)
