@@ -22,5 +22,6 @@ Suggests:
     testthat (>= 3.0.0),
     data.tree,
     DiagrammeR,
-    xgboost
+    xgboost,
+    withr
 Config/testthat/edition: 3
