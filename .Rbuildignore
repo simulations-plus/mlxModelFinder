@@ -1,3 +1,4 @@
 ^mlxModelFinder\.Rproj$
 ^\.Rproj\.user$
 ^bench/
+^inst/extdata/theophylline_project/
