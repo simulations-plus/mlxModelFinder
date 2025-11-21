@@ -56,7 +56,7 @@ Default: \code{10} (no IIV) or \code{20} (with IIV).
 \item \strong{output}: Optional CSV path; if provided, results are appended incrementally. Default: \code{NULL}.
 \item \strong{initial_iiv_forced_iter} (ACO): Integer; number of initial iterations
 where IIV is forced on all parameters to encourage exploration. Default: \code{3}.
-\item \strong{rho} (ACO): Learning/evaporation rate. Default: \code{0.4} (no IIV) or \code{0.6} (with IIV).
+\item \strong{rho} (ACO): Learning/evaporation rate. Default: \code{0.4}.
 \item \strong{obsIDToUse}: Character/integer; which observation ID to use (required if the project has multiple).
 \item \strong{plot}: Logical; if \code{TRUE} and optional deps are available, render progress
 (DiagrammeR/data.tree for Decision Tree; plotly/htmltools for ACO). Default: \code{TRUE}.
