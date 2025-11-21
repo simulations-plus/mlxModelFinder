@@ -49,4 +49,4 @@ po/*~
 rsconnect/
 
 # Ignore all subdirectories of bench/projects/
-bench/projects/*/
+bench/*

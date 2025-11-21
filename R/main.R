@@ -46,7 +46,7 @@
 #'     \item \strong{output}: Optional CSV path; if provided, results are appended incrementally. Default: `NULL`.
 #'     \item \strong{initial_iiv_forced_iter} (ACO): Integer; number of initial iterations
 #'           where IIV is forced on all parameters to encourage exploration. Default: `3`.
-#'     \item \strong{rho} (ACO): Learning/evaporation rate. Default: `0.4` (no IIV) or `0.6` (with IIV).
+#'     \item \strong{rho} (ACO): Learning/evaporation rate. Default: `0.4`.
 #'     \item \strong{obsIDToUse}: Character/integer; which observation ID to use (required if the project has multiple).
 #'     \item \strong{plot}: Logical; if `TRUE` and optional deps are available, render progress
 #'           (DiagrammeR/data.tree for Decision Tree; plotly/htmltools for ACO). Default: `TRUE`.

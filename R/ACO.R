@@ -1,4 +1,12 @@
+# --- REMEMBER TO RUN THIS FIRST ---
+# library(future)
+# library(future.apply)
+# plan(multisession, workers = 4)
+# ---
+
 runACO <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
+
+  project <- lixoftConnectors::getProjectSettings()$project
 
   # --- Initialization ---
   cli::cli_h1("Initializing ACO Search")
@@ -30,65 +38,6 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     names(prev_runs_list) <- hashes
   } else {
     prev_runs_list <- NULL
-  }
-
-  # --- Helper Function to Evaluate a Single Model ---
-  # This function will be a closure, modifying variables in the parent environment
-  evaluate_model <- function(model_df_row) {
-    model_hash <- create_model_hash(model_df_row)
-
-    # Check if model has been run before (in this run or previous runs)
-    if (model_hash %in% names(list_of_runs) || model_hash %in% names(prev_runs_list)) {
-      if (model_hash %in% names(prev_runs_list)) {
-        # It's a pre-seeded run, move it to the main list
-        list_of_runs[[model_hash]] <<- prev_runs_list[[model_hash]]
-        prev_runs_list[[model_hash]] <<- NULL
-      }
-      result <- list_of_runs[[model_hash]]
-      if (result$metric < best_metric) {
-        best_metric <<- result$metric
-        stagnation_count <<- -1
-      }
-      return(result)
-    }
-
-    # --- If model is new, run it ---
-    models_tested <<- models_tested + 1
-    model_struct <- model_df_row[, struct_cols, drop = FALSE]
-    model_name <- getModelName("pk", filters = append(as.list(model_struct), requiredFilters))
-
-    iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
-    error_model <- if (settings$error) model_df_row[, "error", drop = FALSE] else NULL
-
-    runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
-
-    metric <- metric_func()
-
-    improved <- metric < best_metric
-    if (improved) {
-      best_metric <<- metric
-      stagnation_count <<- -1
-    }
-
-    # Use the provided save function
-    save_project(
-      mode = settings$save_mode,
-      path_all = file.path(settings$result_folder, "autoBuild"),
-      path_best = file.path(settings$result_folder, "autoBuild"),
-      idx = models_tested,
-      improved = improved
-    )
-
-    # Store results
-    result <- model_df_row
-    result$metric <- metric
-
-    if (!is.null(settings$table_func))
-      result <- cbind(result, settings$table_func())
-
-    list_of_runs[[model_hash]] <<- result
-
-    return(result)
   }
 
   # --- History Tracking ---
@@ -139,17 +88,105 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     if (settings$error)
       models_df <- cbind(models_df, data.frame(error = models$error[, "error"]))
 
-    # --- Evaluate Models ---
-    cli::cli_progress_bar(format = "Running models {cli::pb_bar} | {i}/{nrow(models_df)}", total = nrow(models_df), clear = FALSE)
-    iter_results_list <- vector("list", nrow(models_df))
-    for(i in 1:nrow(models_df)) {
-      iter_results_list[[i]] <- evaluate_model(models_df[i, , drop = FALSE])
-      cli::cli_progress_update()
+    # --- Evaluate Models (Parallelized) ---
+
+    # 1. DEFINE A "PURE" WORKER FUNCTION
+    # (This is safe to define outside the loop as it doesn't modify state)
+    run_single_model_parallel <- function(model_df_row, project) {
+      lixoftConnectors::initializeLixoftConnectors()
+      lixoftConnectors::loadProject(project)
+      model_struct <- model_df_row[, struct_cols, drop = FALSE]
+      model_name <- getModelName("pk", filters = append(as.list(model_struct), requiredFilters))
+      iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
+      error_model <- if (settings$error) model_df_row[, "error", drop = FALSE] else NULL
+      runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+      metric <- metric_func()
+      result <- model_df_row
+      result$metric <- metric
+      if (!is.null(settings$table_func))
+        result <- cbind(result, settings$table_func())
+      # Read-only check against best_metric
+      improved <- metric < best_metric
+      return(list(result = result, improved = improved))
     }
-    cli::cli_progress_done()
+
+    # 2. SPLIT: Pre-filter models that need to be run
+    models_to_run_list <- list()
+    iter_results_list <- list()
+
+    cli::cli_alert_info("Checking {nrow(models_df)} generated models against history...")
+    for (i in 1:nrow(models_df)) {
+      model_df_row <- models_df[i, , drop = FALSE]
+      model_hash <- create_model_hash(model_df_row)
+
+      if (model_hash %in% names(list_of_runs) || model_hash %in% names(prev_runs_list)) {
+        if (model_hash %in% names(prev_runs_list)) {
+          # FIX: Use = instead of <<-
+          list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
+          prev_runs_list[[model_hash]] <- NULL
+        }
+
+        result <- list_of_runs[[model_hash]]
+        iter_results_list[[model_hash]] <- result
+
+        if (result$metric < best_metric) {
+          # FIX: Use = instead of <<-
+          best_metric <- result$metric
+          stagnation_count <- -1
+        }
+
+      } else {
+        models_to_run_list[[model_hash]] <- model_df_row
+      }
+    }
+
+    # 3. APPLY: Run new models in parallel
+    if (length(models_to_run_list) > 0) {
+      cli::cli_alert_info("Running {length(models_to_run_list)} new models...")
+
+      parallel_results <- future.apply::future_lapply(
+        models_to_run_list,
+        function(row) {
+          res <- run_single_model_parallel(row, project)
+          return(res)
+        },
+        future.seed = TRUE
+      )
+      cli::cli_alert_success("Execution complete.")
+
+      # 4. COMBINE: Integrate parallel results back into the main state
+
+      for (model_hash in names(parallel_results)) {
+        parallel_run <- parallel_results[[model_hash]]
+        result <- parallel_run$result
+        improved <- parallel_run$improved
+
+        models_tested <- models_tested + 1
+
+        if (improved) {
+          best_metric <- result$metric
+          stagnation_count <- -1
+        }
+
+        save_project(
+          mode = settings$save_mode,
+          path_all = file.path(settings$result_folder, "autoBuild"),
+          path_best = file.path(settings$result_folder, "autoBuild"),
+          idx = models_tested,
+          improved = improved
+        )
+
+        list_of_runs[[model_hash]] <- result
+        iter_results_list[[model_hash]] <- result
+      }
+    } else {
+      cli::cli_alert_info("No new models to run in this iteration (all found in history).")
+    }
+
+    iter_results_list <- unname(Filter(Negate(is.null), iter_results_list))
 
     # --- Search with XGBoost if stagnating ---
-    if (settings$xgboost && settings$iiv && settings$error && stagnation_count == 2) {
+    if (settings$xgboost && settings$iiv && settings$error && stagnation_count == 7) {
       cli::cli_alert_info("Stagnation detected. Searching with XGBoost...")
 
       list_of_runs_df <- do.call(rbind, list_of_runs)
@@ -162,9 +199,70 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       )
 
       xgb_runs$pred_score <- NULL
-      xgb_results <- lapply(split(xgb_runs, seq(nrow(xgb_runs))), evaluate_model)
 
-      iter_results_list <- c(iter_results_list, xgb_results)
+      cli::cli_alert_info("Evaluating {nrow(xgb_runs)} models from XGBoost...")
+      xgb_results_list <- vector("list", nrow(xgb_runs))
+      xgb_models_to_run <- list()
+
+      # 1. SPLIT (XGBoost)
+      for (i in 1:nrow(xgb_runs)) {
+        model_df_row <- xgb_runs[i, , drop = FALSE]
+        model_hash <- create_model_hash(model_df_row)
+        if (model_hash %in% names(list_of_runs) || model_hash %in% names(prev_runs_list)) {
+          if (model_hash %in% names(prev_runs_list)) {
+            list_of_runs[[model_hash]] <- prev_runs_list[[model_hash]]
+            prev_runs_list[[model_hash]] <- NULL
+          }
+          result <- list_of_runs[[model_hash]]
+          xgb_results_list[[i]] <- result
+          if (result$metric < best_metric) {
+            best_metric <- result$metric
+            stagnation_count <- -1
+          }
+        } else {
+          xgb_models_to_run[[model_hash]] <- model_df_row
+        }
+      }
+
+      # 2. APPLY (XGBoost)
+      if (length(xgb_models_to_run) > 0) {
+        cli::cli_alert_info("Running {length(xgb_models_to_run)} new XGBoost models in parallel...")
+        xgb_parallel_results <- future.apply::future_lapply(
+          xgb_models_to_run,
+          function(row) {
+            res <- run_single_model_parallel(row, project)
+            return(res)
+          },
+          future.seed = TRUE
+        )
+
+        # 3. COMBINE (XGBoost)
+        for (model_hash in names(xgb_parallel_results)) {
+          parallel_run <- xgb_parallel_results[[model_hash]]
+          result <- parallel_run$result
+          improved <- parallel_run$improved
+
+          models_tested <- models_tested + 1
+          if (improved) {
+            best_metric <- result$metric
+            stagnation_count <- -1
+          }
+          save_project(
+            mode = settings$save_mode,
+            path_all = file.path(settings$result_folder, "autoBuild"),
+            path_best = file.path(settings$result_folder, "autoBuild"),
+            idx = models_tested,
+            improved = improved
+          )
+          list_of_runs[[model_hash]] <- result
+          iter_results_list[[length(iter_results_list) + 1]] <- result
+        }
+      }
+
+      existing_xgb_results <- Filter(Negate(is.null), xgb_results_list)
+      if (length(existing_xgb_results) > 0) {
+        iter_results_list <- c(iter_results_list, existing_xgb_results)
+      }
     }
 
     # --- Add global best ---
@@ -172,6 +270,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       iter_results_list[[length(iter_results_list) + 1]] <- best_model_info[, colnames(best_model_info) != "rank"]
 
     # --- Do local IIV search ---
+    # (This section remains unchanged, as it was already correct)
     if (settings$local_search && settings$iiv && iteration > settings$initial_iiv_forced_iter) {
       cli::cli_alert_info("Running local IIV search on the best model...")
 
@@ -196,6 +295,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
         prev_runs_list = prev_runs_list
       )
 
+      # This is the crucial part: runLocalSearch returns *new* lists,
+      # which replace the old ones. My fix (using =) makes this safe.
       list_of_runs <- res$list_of_runs
       prev_runs_list <- res$prev_runs_list
       models_tested <- models_tested + res$models_tested
@@ -210,11 +311,9 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     }
 
     # --- Post-Iteration Processing ---
-    # Efficiently combine the list of results into a single data frame
     iter_models <- do.call(rbind, Filter(Negate(is.null), iter_results_list))
     rownames(iter_models) <- NULL
 
-    # Save current progress to a file if requested
     if (!is.null(settings$output)) {
       full_results_df <- do.call(rbind, list_of_runs)
       prev_runs <- do.call(rbind, prev_runs_list)
@@ -225,10 +324,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       }, error = function(e) cli::cli_alert_warning("Error when writing model list to a file: File is likely open in Excel"))
     }
 
-    # Sort the models from the current iteration by performance and rank them
     iter_models <- iter_models[order(iter_models$metric), ]
     iter_models$rank <- 1:nrow(iter_models)
-
     iter_models <- postprocessModels(iter_models)
 
     # --- Update Pheromones (Probabilities) ---
@@ -261,13 +358,11 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     }
     cli::cli_end(ulid)
 
-    # Store and plot probability history
     history_list[[iteration + 1]] <- log_history(iteration)
 
     if (settings$plot)
       print(plotProbabilities(history_list))
 
-    # Store results per iteration
     iteration_progress[[iteration]] <- cbind(
       data.frame(iteration = iteration, models_tested = models_tested),
       best_model_info
@@ -316,4 +411,3 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     prob_history = history_list
   ))
 }
-
