@@ -14,7 +14,8 @@
 #' @param project (required) Path to the **Monolix** project (`.mlxtran`) that already
 #'   contains the dataset and SAEM settings. Estimation settings/seed are taken
 #'   from the project.
-#' @param library (required) Model library to use. Options: `"pk"` (currently supported).
+#' @param library (required) Model library to use. Options: `"pk"` (built-in PK library),
+#'   `"custom"` (user-defined models via `model_creation_func`).
 #' @param filters (optional) Named list defining **optional** structural components
 #'   to explore. For the `"pk"` library:
 #'   \itemize{
@@ -26,11 +27,13 @@
 #'           `"true"`, `"false"`
 #'   }
 #'   If a component is omitted, **all** of its options are included in the search.
-#' @param requiredFilters (required) Named list of **required** structural components:
+#' @param requiredFilters (optional for `library = "custom"`, required for `library = "pk"`)
+#'   Named list of **required** structural components for the `"pk"` library:
 #'   \itemize{
 #'     \item \strong{administration}: `"bolus"`, `"infusion"`, `"oral"`, `"oralBolus"`
 #'     \item \strong{parametrization}: `"rate"`, `"clearance"`
 #'   }
+#'   Not used when `library = "custom"`.
 #' @param algorithm (optional) Search algorithm. One of
 #'   `"ACO"`, `"exhaustive_search"`, `"decision_tree"`.
 #'   If `NULL`, defaults to `"ACO"` when `settings$iiv = TRUE`, otherwise `"decision_tree"`.
@@ -80,6 +83,23 @@
 #'   path) and **returns a project path** (same or new) after setting initial values via
 #'   `lixoftConnectors`. Use this to inject custom population initials before each run.
 #'   If `NULL`, the package uses its internal/default initializer.
+#' @param model_creation_func (optional) **Custom model creation function** for use with
+#'   `library = "custom"`. Must be a function that accepts exactly two arguments:
+#'   `library` (character) and `filters` (named list), and returns a character string
+#'   containing the **absolute path** to a valid Monolix model file. This allows you to
+#'   use your own model library instead of the built-in PK library. When `library = "custom"`,
+#'   this parameter is **required**. Only compatible with `algorithm = "exhaustive_search"`
+#'   or `algorithm = "ACO"` (not compatible with `"decision_tree"`).
+#' @param param_mapping (optional) **Parameter mapping structure** for custom models with IIV.
+#'   Required when `library = "custom"` and `settings$iiv = TRUE`. Must be a named list with:
+#'   \itemize{
+#'     \item \strong{common_params}: Character vector of parameter names present in all models
+#'     \item \strong{filter_params}: Named list where each name corresponds to a filter category
+#'           (e.g., "absorption"), and each value is a named list mapping filter values
+#'           (e.g., "firstOrder") to character vectors of parameter names specific to that filter value
+#'   }
+#'   This structure tells the algorithm which parameters are available for IIV exploration
+#'   in each model variant. See vignette for detailed examples.
 #'
 #' @return A list that contains:
 #'   \itemize{
@@ -146,6 +166,26 @@
 #'   requiredFilters = list(administration = "oral", parametrization = "clearance"),
 #'   algorithm = "decision_tree",
 #'   settings = list(findIIV = TRUE)
+#' )
+#'
+#' # Example 6: Custom model library with exhaustive search
+#' # Define a custom model creation function
+#' my_custom_func <- function(library, filters) {
+#'   # Return path to appropriate model file based on filters
+#'   if (filters$absorption == "firstOrder") {
+#'     return("/path/to/my/first_order_model.txt")
+#'   } else {
+#'     return("/path/to/my/zero_order_model.txt")
+#'   }
+#' }
+#'
+#' res <- findModel(
+#'   project = "my_project.mlxtran",
+#'   library = "custom",
+#'   filters = list(absorption = c("firstOrder", "zeroOrder")),
+#'   algorithm = "exhaustive_search",
+#'   model_creation_func = my_custom_func,
+#'   settings = list(iiv = FALSE, error = FALSE)
 #' )
 #' }
 #'

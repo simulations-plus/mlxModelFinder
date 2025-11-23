@@ -1,0 +1,347 @@
+---
+title: "Using Custom Model Libraries"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using Custom Model Libraries}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE  # Set to TRUE if you have Monolix installed
+)
+```
+
+## Introduction
+
+The `mlxModelFinder` package allows you to use your own custom model library instead of the built-in PK library. This is useful when:
+
+- You have a specialized set of models for a specific therapeutic area
+- You want to explore non-PK models (PD, PKPD, disease progression, etc.)
+- You have pre-validated models that you want to systematically compare
+- You need models with specific structural features not in the PK library
+
+This vignette demonstrates how to create and use custom model libraries with both exhaustive search and ACO algorithms.
+
+## Basic Concept
+
+To use custom models, you need to:
+
+1. Set `library = "custom"` in `findModel()`
+2. Provide a `model_creation_func` that returns model file paths based on filter values
+3. Optionally provide a `param_mapping` structure if using IIV exploration
+
+## Example 1: Simple Custom Model Library
+
+Let's start with a basic example using two 1-compartment PK models with different absorption types.
+
+### Step 1: Create Model Files
+
+First, create your model files:
+
+```{r}
+# Model 1: First-order absorption
+model_fo_content <- '[LONGITUDINAL]
+input = {V, Cl, ka}
+
+PK:
+compartment(cmt=1, volume=V, concentration=Cc)
+oral(cmt=1, ka)
+elimination(cmt=1, k=Cl/V)
+
+OUTPUT:
+output = {Cc}
+'
+
+# Model 2: Zero-order absorption
+model_zo_content <- '[LONGITUDINAL]
+input = {V, Cl, Tk0}
+
+PK:
+compartment(cmt=1, volume=V, concentration=Cc)
+oral(cmt=1, Tk0=Tk0, p=0)
+elimination(cmt=1, k=Cl/V)
+
+OUTPUT:
+output = {Cc}
+'
+
+# Save to files
+writeLines(model_fo_content, "model_first_order.txt")
+writeLines(model_zo_content, "model_zero_order.txt")
+```
+
+### Step 2: Create Model Creation Function
+
+```{r}
+my_model_func <- function(library, filters) {
+  # Return appropriate model based on absorption filter
+  if (filters$absorption == "firstOrder") {
+    return(normalizePath("model_first_order.txt"))
+  } else if (filters$absorption == "zeroOrder") {
+    return(normalizePath("model_zero_order.txt"))
+  }
+  stop("Unknown absorption type: ", filters$absorption)
+}
+```
+
+### Step 3: Run Model Selection
+
+```{r}
+library(mlxModelFinder)
+
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(absorption = c("firstOrder", "zeroOrder")),
+  algorithm = "exhaustive_search",
+  model_creation_func = my_model_func,
+  settings = list(
+    iiv = FALSE,
+    error = FALSE,
+    plot = FALSE
+  )
+)
+
+# View results
+print(result$results)
+print(result$best_model)
+```
+
+## Example 2: Custom Models with IIV
+
+When exploring IIV, you need to tell the algorithm which parameters are available in each model variant.
+
+### Step 1: Define Parameter Mapping
+
+```{r}
+my_param_mapping <- list(
+  # Parameters present in ALL models
+  common_params = c("V", "Cl"),
+  
+  # Parameters specific to certain filter values
+  filter_params = list(
+    absorption = list(
+      firstOrder = c("ka"),      # firstOrder models have ka
+      zeroOrder = c("Tk0")        # zeroOrder models have Tk0
+    )
+  )
+)
+```
+
+### Step 2: Run with IIV
+
+```{r}
+result_iiv <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(absorption = c("firstOrder", "zeroOrder")),
+  algorithm = "exhaustive_search",
+  model_creation_func = my_model_func,
+  param_mapping = my_param_mapping,  # Required for IIV
+  settings = list(
+    iiv = TRUE,
+    error = FALSE,
+    plot = FALSE
+  )
+)
+```
+
+The algorithm will:
+- Test IIV on V and Cl for all models (common parameters)
+- Test IIV on ka only for firstOrder models
+- Test IIV on Tk0 only for zeroOrder models
+
+## Example 3: Multi-Dimensional Custom Library
+
+You can use multiple filter dimensions:
+
+```{r}
+# Create models for different combinations
+create_model_file <- function(absorption, distribution) {
+  # Generate model content based on both filters
+  # ... (implementation details)
+  return(file_path)
+}
+
+advanced_model_func <- function(library, filters) {
+  abs_type <- filters$absorption
+  dist_type <- filters$distribution
+  
+  # Map filter combination to model file
+  model_key <- paste(abs_type, dist_type, sep = "_")
+  
+  model_files <- list(
+    "firstOrder_1cpt" = "models/fo_1cpt.txt",
+    "firstOrder_2cpt" = "models/fo_2cpt.txt",
+    "zeroOrder_1cpt" = "models/zo_1cpt.txt",
+    "zeroOrder_2cpt" = "models/zo_2cpt.txt"
+  )
+  
+  return(normalizePath(model_files[[model_key]]))
+}
+
+# Parameter mapping for multi-dimensional library
+advanced_param_mapping <- list(
+  common_params = c("V", "Cl"),
+  filter_params = list(
+    absorption = list(
+      firstOrder = c("ka"),
+      zeroOrder = c("Tk0")
+    ),
+    distribution = list(
+      "1cpt" = character(0),           # No additional params
+      "2cpt" = c("Q", "V2")             # 2-compartment adds Q and V2
+    )
+  )
+)
+
+result_advanced <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(
+    absorption = c("firstOrder", "zeroOrder"),
+    distribution = c("1cpt", "2cpt")
+  ),
+  algorithm = "exhaustive_search",
+  model_creation_func = advanced_model_func,
+  param_mapping = advanced_param_mapping,
+  settings = list(iiv = TRUE, error = FALSE)
+)
+```
+
+## Example 4: Using ACO with Custom Models
+
+ACO works similarly but explores the model space stochastically:
+
+```{r}
+result_aco <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(absorption = c("firstOrder", "zeroOrder")),
+  algorithm = "ACO",
+  model_creation_func = my_model_func,
+  param_mapping = my_param_mapping,
+  settings = list(
+    iiv = TRUE,
+    error = TRUE,
+    N = 10,                    # Number of ants per iteration
+    max_models = 50,           # Stop after 50 models
+    plot = FALSE
+  )
+)
+
+# ACO provides iteration progress
+print(result_aco$iteration_progress)
+```
+
+## Best Practices
+
+### 1. Model File Organization
+
+```{r}
+# Organize models in a directory structure
+models/
+  ├── absorption/
+  │   ├── first_order.txt
+  │   └── zero_order.txt
+  └── distribution/
+      ├── 1compartment.txt
+      └── 2compartments.txt
+```
+
+### 2. Robust Model Creation Function
+
+```{r}
+robust_model_func <- function(library, filters) {
+  # Validate inputs
+  if (!is.list(filters)) {
+    stop("filters must be a list")
+  }
+  
+  # Build file path
+  model_dir <- "path/to/models"
+  filename <- sprintf("%s_%s.txt", 
+                     filters$absorption, 
+                     filters$distribution)
+  filepath <- file.path(model_dir, filename)
+  
+  # Verify file exists
+  if (!file.exists(filepath)) {
+    stop("Model file not found: ", filepath)
+  }
+  
+  return(normalizePath(filepath))
+}
+```
+
+### 3. Complete Parameter Mapping
+
+```{r}
+# Always specify all parameters that could have IIV
+complete_param_mapping <- list(
+  common_params = c("V", "Cl"),  # Present in ALL models
+  filter_params = list(
+    absorption = list(
+      firstOrder = c("ka"),
+      zeroOrder = c("Tk0"),
+      sigmoid = c("ka", "Tk0s"),
+      transitCompartments = c("Ktr", "Mtt")
+    ),
+    distribution = list(
+      "1compartment" = character(0),
+      "2compartments" = c("Q", "V2"),
+      "3compartments" = c("Q", "V2", "Q2", "V3")
+    )
+  )
+)
+```
+
+### 4. Error Handling
+
+```{r}
+safe_model_func <- function(library, filters) {
+  tryCatch({
+    # Your model selection logic
+    filepath <- select_model(filters)
+    
+    # Validate the model file
+    if (!file.exists(filepath)) {
+      stop("Model file not found: ", filepath)
+    }
+    
+    # Could also validate model syntax here
+    return(normalizePath(filepath))
+  },
+  error = function(e) {
+    message("Error in model_creation_func: ", e$message)
+    message("Filters: ", paste(names(filters), filters, sep="=", collapse=", "))
+    stop(e)
+  })
+}
+```
+
+## Limitations
+
+- Custom models are **not compatible** with `algorithm = "decision_tree"`
+- Only `"exhaustive_search"` and `"ACO"` algorithms are supported
+- The `requiredFilters` parameter is not used with custom libraries
+- You are responsible for ensuring model files are valid Monolix models
+
+## Summary
+
+Custom model libraries provide flexibility to:
+- Use domain-specific models
+- Explore non-PK model structures
+- Integrate pre-validated models
+- Systematically compare custom model variants
+
+The key components are:
+1. `model_creation_func`: Maps filter values to model file paths
+2. `param_mapping`: Defines which parameters are available for IIV in each model variant
+3. `filters`: Defines the search space dimensions
+
+For more examples and details, see the package documentation and test files.
