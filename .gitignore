@@ -50,3 +50,4 @@ rsconnect/
 
 # Ignore all subdirectories of bench/projects/
 bench/*
+inst/extdata/theophylline_project/*

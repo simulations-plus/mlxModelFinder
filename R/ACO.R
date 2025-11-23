@@ -4,7 +4,9 @@
 # plan(multisession, workers = 4)
 # ---
 
-runACO <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
+runACO <- function(library, filters, requiredFilters, settings, metric_func, initial_func,
+                   model_creation_func = NULL,  # NEW
+                   param_mapping = NULL) {      # NEW
 
   project <- lixoftConnectors::getProjectSettings()$project
 
@@ -15,7 +17,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   probas_struct <- probabilities(filters)
   struct_cols <- colnames(probas_struct$filters)
   probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true) else NULL
-  iiv_cols <- if (settings$iiv) colnames(probas_iiv$filters) else NULL
+  iiv_cols <- if (settings$iiv && !is.null(probas_iiv)) colnames(probas_iiv$filters) else NULL
   probas_error <- if (settings$error) probabilities(list(error = c("constant", "proportional", "combined1", "combined2"))) else NULL
 
   # --- ACO State Variables ---
@@ -63,8 +65,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       models$iiv[] <- TRUE
     }
 
-    # For certain absorption models, delay is not a meaningful parameter
-    if (library == "pk" && requiredFilters$administration %in% c("oral", "oralBolus")) {
+    # For certain absorption models, delay is not meaningful (only for standard PK)
+    if (library == "pk" && !is.null(requiredFilters) && requiredFilters$administration %in% c("oral", "oralBolus")) {
       is_special_abs <- models$struct[, "absorption"] == "transitCompartments"
       if (sum(is_special_abs) > 0)
         models$struct[is_special_abs, "delay"] <- NA
@@ -73,9 +75,32 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     # Combine all model components into a single data frame
     if (settings$iiv) {
       for (i in 1:settings$N) {
-        model <- getModelName("pk", filters = append(models$struct[i, ], requiredFilters))
+        # Prepare filters for getModelName
+        if (library == "custom" || is.null(requiredFilters) || length(requiredFilters) == 0) {
+          model_filters <- as.list(models$struct[i, ])
+        } else {
+          model_filters <- append(models$struct[i, ], requiredFilters)
+        }
+        
+        model <- getModelName(
+          library,  # Use library parameter
+          filters = model_filters,
+          custom_func = model_creation_func  # Pass custom function
+        )
         lixoftConnectors::setStructuralModel(model)
+        
+        # Get parameter names from the model
         param_names <- lixoftConnectors::getIndividualParameterModel()$name
+        
+        # For custom models, also check against param_mapping
+        if (library == "custom" && !is.null(param_mapping)) {
+          expected_params <- getParamListFromMapping(
+            as.list(models$struct[i, ]), 
+            param_mapping
+          )
+          param_names <- intersect(param_names, expected_params)
+        }
+        
         models$iiv[i, !(colnames(models$iiv) %in% param_names)] <- NA
       }
     }
@@ -96,7 +121,13 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       lixoftConnectors::initializeLixoftConnectors()
       lixoftConnectors::loadProject(project)
       model_struct <- model_df_row[, struct_cols, drop = FALSE]
-      model_name <- getModelName("pk", filters = append(as.list(model_struct), requiredFilters))
+      
+      model_name <- getModelName(
+        library,  # Use library parameter
+        filters = append(as.list(model_struct), requiredFilters),
+        custom_func = model_creation_func  # Pass custom function
+      )
+      
       iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
       error_model <- if (settings$error) model_df_row[, "error", drop = FALSE] else NULL
       runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
@@ -277,7 +308,11 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       min_metric <- min(sapply(iter_results_list, function(x) x$metric))
       index_best <- which(sapply(iter_results_list, function(x) x$metric == min_metric))[1]
 
-      model <- getModelName("pk", filters = append(iter_results_list[[index_best]][, struct_cols], requiredFilters))
+      model <- getModelName(
+        library,  # Use library parameter instead of hardcoded "pk"
+        filters = append(iter_results_list[[index_best]][, struct_cols], requiredFilters),
+        custom_func = model_creation_func  # Pass custom function
+      )
 
       iiv_params <- iter_results_list[[index_best]][, iiv_cols]
       error_model <- if (settings$error) iter_results_list[[index_best]][, "error"] else NULL

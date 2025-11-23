@@ -96,6 +96,10 @@ iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FA
     param_list <- get_pk_parameters(filters, requiredFilters)
     param_map <- lapply(param_list, function(x) c(TRUE, FALSE))
     names(param_map) <- param_list
+  } else if (library == "custom") {
+    # For custom libraries, IIV parameters are determined dynamically
+    # Return empty probabilities - ACO will handle this differently
+    return(NULL)
   } else {
     stop("Unsupported library", call. = FALSE)
   }

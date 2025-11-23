@@ -16,9 +16,9 @@ validate_project <- function(project) {
 }
 
 validate_library <- function(library) {
-  allowed_values <- c("pk")  # keep future values when supported
+  allowed_values <- c("pk", "custom")
   if (!is.character(library) || length(library) != 1 || !(library %in% allowed_values)) {
-    stop("Error: 'library' must be 'pk'.", call. = FALSE)
+    stop("Error: 'library' must be 'pk' or 'custom'.", call. = FALSE)
   }
   TRUE
 }
@@ -38,7 +38,16 @@ validate_required_filters <- function(requiredFilters) {
   return(TRUE)
 }
 
-validate_filters <- function(filters, requiredFilters) {
+validate_filters <- function(filters, requiredFilters, library = "pk") {
+  # Skip standard validation for custom library
+  if (library == "custom") {
+    if (!is.list(filters) || length(filters) == 0) {
+      stop("Error: 'filters' must be a non-empty list for custom library.", call. = FALSE)
+    }
+    return(TRUE)
+  }
+  
+  # Standard PK library validation
   allowed_names <- c("delay", "absorption", "distribution", "elimination", "bioavailability")
   if (!is.list(filters) || !all(names(filters) %in% allowed_names)) {
     stop("Error: 'filters' must be a list with keys from: 'delay', 'absorption', 'distribution', 'elimination', 'bioavailability'.", call. = FALSE)
@@ -287,4 +296,62 @@ validate_obsidtouse <- function(settings) {
     return(FALSE)
   }
   TRUE
+}
+
+validate_custom_model_setup <- function(library, algorithm, model_creation_func, 
+                                        param_mapping, settings) {
+  if (library == "custom") {
+    # Require model_creation_func
+    if (is.null(model_creation_func) || !is.function(model_creation_func)) {
+      stop("Error: 'model_creation_func' must be provided as a function when library='custom'.", 
+           call. = FALSE)
+    }
+    
+    # Check function signature (should accept library and filters)
+    if (length(formals(model_creation_func)) != 2) {
+      stop("Error: 'model_creation_func' must accept exactly 2 arguments: library and filters.", 
+           call. = FALSE)
+    }
+    
+    # Restrict to supported algorithms
+    if (!algorithm %in% c("exhaustive_search", "ACO")) {
+      stop("Error: library='custom' is only supported with algorithm='exhaustive_search' or 'ACO'.", 
+           call. = FALSE)
+    }
+    
+    # Require param_mapping if IIV is enabled
+    if (isTRUE(settings$iiv)) {
+      if (is.null(param_mapping) || !is.list(param_mapping)) {
+        stop("Error: 'param_mapping' must be provided as a list when library='custom' and settings$iiv=TRUE.", 
+             call. = FALSE)
+      }
+      
+      # Validate param_mapping structure
+      if (!all(c("filter_params", "common_params") %in% names(param_mapping))) {
+        stop("Error: 'param_mapping' must contain 'filter_params' and 'common_params' elements.", 
+             call. = FALSE)
+      }
+      
+      # Validate common_params is a character vector
+      if (!is.null(param_mapping$common_params) && 
+          !is.character(param_mapping$common_params)) {
+        stop("Error: 'param_mapping$common_params' must be a character vector.", 
+             call. = FALSE)
+      }
+      
+      # Validate filter_params is a list
+      if (!is.null(param_mapping$filter_params) && 
+          !is.list(param_mapping$filter_params)) {
+        stop("Error: 'param_mapping$filter_params' must be a list.", 
+             call. = FALSE)
+      }
+    }
+  }
+  
+  # If not custom, model_creation_func should not be provided
+  if (library != "custom" && !is.null(model_creation_func)) {
+    warning("'model_creation_func' is ignored when library != 'custom'")
+  }
+  
+  return(TRUE)
 }

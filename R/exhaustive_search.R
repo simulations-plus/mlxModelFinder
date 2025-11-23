@@ -9,7 +9,9 @@
 # # plan(batchtools_slurm, resources = list(walltime = "1:00:00", ...))
 # ---
 
-runExhaustiveSearch <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
+runExhaustiveSearch <- function(library, filters, requiredFilters, settings, metric_func, initial_func,
+                                model_creation_func = NULL,  # NEW
+                                param_mapping = NULL) {      # NEW
 
   project <- lixoftConnectors::getProjectSettings()$project
 
@@ -30,14 +32,22 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     all_models <- merge(all_models, errors)
   }
 
-  # This list will hold every unique run
   job_list <- list()
 
-  # A helper list of all known IIV parameters
-  param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
-                  "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
-                  "k", "k12", "k21", "k13", "k31",
-                  "Vm", "Km", "F")
+  # Determine parameter list based on library type
+  if (library == "custom" && !is.null(param_mapping)) {
+    # For custom models, get all possible parameters from mapping
+    param_list <- unique(c(
+      param_mapping$common_params,
+      unlist(param_mapping$filter_params)
+    ))
+  } else {
+    # Use standard PK parameter list
+    param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
+                    "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
+                    "k", "k12", "k21", "k13", "k31",
+                    "Vm", "Km", "F")
+  }
 
   # Create a blank data frame for storing IIV info
   param_cols <- as.data.frame(lapply(param_list, function(x) NA))
@@ -49,25 +59,73 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     model_row <- all_models[i, , drop = FALSE]
     struct_cols <- setdiff(names(model_row), "error")
 
-    model_name <- getModelName("pk", filters = append(model_row[, struct_cols], requiredFilters))
+    # Use custom or standard getModelName
+    # For custom libraries, requiredFilters might be NULL
+    if (library == "custom" || is.null(requiredFilters) || length(requiredFilters) == 0) {
+      model_filters <- as.list(model_row[, struct_cols])
+    } else {
+      model_filters <- append(model_row[, struct_cols], requiredFilters)
+    }
+    
+    model_name <- getModelName(
+      library, 
+      filters = model_filters,
+      custom_func = model_creation_func  # Pass through custom function
+    )
 
     # This is the stateful part that must be run sequentially
     lixoftConnectors::setStructuralModel(model_name)
 
     error_model <- if (settings$error) model_row[, "error", drop = FALSE] else NULL
 
-    # Get the valid IIV combinations for *this* structural model
+    # Get IIV combinations
     if (settings$iiv) {
-      default_iiv <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability$id))
-      # This can be empty if no IIVs are defined
-      if(ncol(default_iiv) > 0) {
-        iiv_combos <- expand.grid(lapply(default_iiv, function(x) c(TRUE, FALSE)))
+      # For custom models with param_mapping, determine which params are in this model
+      if (library == "custom" && !is.null(param_mapping)) {
+        # Get parameters for this specific filter combination
+        model_params <- getParamListFromMapping(
+          as.list(model_row[, struct_cols]), 
+          param_mapping
+        )
+        
+        # Get actual parameters from Monolix
+        available_params <- lixoftConnectors::getIndividualParameterModel()$name
+        
+        # Intersect to get valid IIV parameters for this model
+        valid_iiv_params <- intersect(model_params, available_params)
+        
+        if (length(valid_iiv_params) > 0) {
+          variability_df <- as.data.frame(
+            lixoftConnectors::getIndividualParameterModel()$variability$id
+          )
+          
+          # Only select columns that actually exist in the data frame
+          existing_cols <- intersect(valid_iiv_params, names(variability_df))
+          
+          if (length(existing_cols) > 0) {
+            default_iiv <- variability_df[, existing_cols, drop = FALSE]
+            iiv_combos <- expand.grid(lapply(default_iiv, function(x) c(TRUE, FALSE)))
+          } else {
+            iiv_combos <- data.frame(row.names = 1)
+          }
+        } else {
+          iiv_combos <- data.frame(row.names = 1)
+        }
       } else {
-        iiv_combos <- data.frame(row.names = 1) # A single run with no IIVs
+        # Standard PK logic (existing code)
+        default_iiv <- as.data.frame(as.list(
+          lixoftConnectors::getIndividualParameterModel()$variability$id
+        ))
+        if (ncol(default_iiv) > 0) {
+          iiv_combos <- expand.grid(lapply(default_iiv, function(x) c(TRUE, FALSE)))
+        } else {
+          iiv_combos <- data.frame(row.names = 1)
+        }
       }
     } else {
-      # If IIV is false, just run the base model once
-      iiv_combos <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability$id))
+      iiv_combos <- as.data.frame(as.list(
+        lixoftConnectors::getIndividualParameterModel()$variability$id
+      ))
     }
 
     # Add each IIV combination as a separate job
@@ -178,7 +236,11 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     # Re-build the components for the best model
     struct_cols <- names(filters)
     best_struct_info <- best_model_df[, struct_cols, drop = FALSE]
-    best_model_name <- getModelName("pk", filters = append(as.list(best_struct_info), requiredFilters))
+    best_model_name <- getModelName(
+      library,  # Use the library parameter, not hardcoded "pk"
+      filters = append(as.list(best_struct_info), requiredFilters),
+      custom_func = model_creation_func  # Pass through custom function
+    )
 
     best_error_model <- if (settings$error) best_model_df[, "error", drop = FALSE] else NULL
 

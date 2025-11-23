@@ -1,4 +1,8 @@
-getAllFilters <- function(library, requiredFilters) {
+getAllFilters <- function(library, requiredFilters, custom_filters = NULL) {
+  # If custom filters provided, return them directly
+  if (library == "custom" && !is.null(custom_filters)) {
+    return(custom_filters)
+  }
 
   if (library == "pk" && requiredFilters$administration == "oralBolus")
     return(list(
@@ -26,6 +30,11 @@ getAllFilters <- function(library, requiredFilters) {
 }
 
 updateFilters <- function(library, filters, requiredFilters) {
+  
+  # For custom library, just return filters as-is
+  if (library == "custom") {
+    return(filters)
+  }
 
   all_filters <- getAllFilters(library, requiredFilters)
   updated_filters <- list()
@@ -151,6 +160,16 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
     absorption_delays <- max(sum(filters$absorption != "transitCompartments"), 1) * length(filters$delay)
     direct_abs <- sum(filters$absorption == "transitCompartments")
     space <- (absorption_delays + direct_abs) * length(filters$distribution) * length(filters$elimination)
+  } else if (library == "custom") {
+    # For custom libraries, calculate space based on filter combinations
+    if (length(filters) > 0) {
+      space <- prod(sapply(filters, length))
+    } else {
+      space <- 1
+    }
+  } else {
+    # Unknown library
+    space <- 1
   }
   if (iiv) {
     if (library == "pk") {
@@ -182,21 +201,25 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
 
       if ("transitCompartments" %in% all_models$absorption)
         all_models[all_models$absorption == "transitCompartments", ]$delay <- NA
+      
+      common_names <- intersect(names(nb_params), colnames(all_models))
+
+      param_maps <- mapply(function(df, feat) {
+        setNames(df$level, as.character(df[[feat]]))
+      }, nb_params[common_names], common_names, SIMPLIFY = FALSE)
+
+      param_values <- mapply(function(column_data, map) {
+        unname(map[as.character(column_data)])
+      }, all_models[common_names], param_maps, SIMPLIFY = FALSE)
+
+      all_models$total_params <- rowSums(as.data.frame(param_values), na.rm = TRUE)
+
+      space <- sum(2^all_models$total_params)
+    } else if (library == "custom") {
+      # For custom libraries, use a conservative estimate
+      # Assume average of 3 parameters per model, giving 2^3 = 8 IIV combinations
+      space <- space * 8
     }
-
-    common_names <- intersect(names(nb_params), colnames(all_models))
-
-    param_maps <- mapply(function(df, feat) {
-      setNames(df$level, as.character(df[[feat]]))
-    }, nb_params[common_names], common_names, SIMPLIFY = FALSE)
-
-    param_values <- mapply(function(column_data, map) {
-      unname(map[as.character(column_data)])
-    }, all_models[common_names], param_maps, SIMPLIFY = FALSE)
-
-    all_models$total_params <- rowSums(as.data.frame(param_values), na.rm = TRUE)
-
-    space <- sum(2^all_models$total_params)
   }
   if (error) space <- space * 4
 
@@ -320,4 +343,37 @@ save_project <- function(mode, path_all, path_best, idx, improved) {
   }
 
   lixoftConnectors::saveProject(project)
+}
+
+# Get parameter list for IIV based on filters and param_mapping
+getParamListFromMapping <- function(filters, param_mapping) {
+  if (is.null(param_mapping)) {
+    return(character(0))
+  }
+  
+  params <- character(0)
+  
+  # Add common parameters (always present)
+  if (!is.null(param_mapping$common_params)) {
+    params <- c(params, param_mapping$common_params)
+  }
+  
+  # Add filter-specific parameters
+  if (!is.null(param_mapping$filter_params)) {
+    for (filter_name in names(filters)) {
+      filter_value <- filters[[filter_name]]
+      
+      # Check if this filter category has parameter mappings
+      if (filter_name %in% names(param_mapping$filter_params)) {
+        category_mapping <- param_mapping$filter_params[[filter_name]]
+        
+        # Check if this specific filter value has parameters
+        if (filter_value %in% names(category_mapping)) {
+          params <- c(params, category_mapping[[filter_value]])
+        }
+      }
+    }
+  }
+  
+  return(unique(params))
 }

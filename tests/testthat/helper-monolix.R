@@ -2,8 +2,16 @@
 demo_proj <- system.file("extdata", "theophylline_project.mlxtran",
                          package = "mlxModelFinder")
 
+# If not found (e.g., using devtools::load_all()), try local path
+if (demo_proj == "" || !file.exists(demo_proj)) {
+  local_proj <- file.path("inst", "extdata", "theophylline_project.mlxtran")
+  if (file.exists(local_proj)) {
+    demo_proj <- normalizePath(local_proj)
+  }
+}
+
 mlx_available <- function() {
-  if (!file.exists(demo_proj)) return(FALSE)
+  if (demo_proj == "" || !file.exists(demo_proj)) return(FALSE)
   if (!requireNamespace("lixoftConnectors", quietly = TRUE)) return(FALSE)
   TRUE
 }

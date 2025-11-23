@@ -155,9 +155,10 @@
 #' @importFrom cli cli_progress_done cli_progress_update
 #'
 #' @export
-findModel <- function(project, library, requiredFilters, filters = NULL,
+findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
                       algorithm = NULL, settings = NULL, metric_func = NULL,
-                      initial_func = NULL) {
+                      initial_func = NULL, model_creation_func = NULL,
+                      param_mapping = NULL) {
 
   op = options()
   op$lixoft_notificationOptions$warnings = 1
@@ -174,19 +175,29 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   # --- Argument Checks ---
   validate_project(project)
   validate_library(library)
-  validate_required_filters(requiredFilters)
+  
+  # For custom library, requiredFilters can be empty
+  if (library != "custom") {
+    validate_required_filters(requiredFilters)
+  }
+  
   if (!is.null(algorithm)) validate_algorithm(algorithm)
-  if (!is.null(filters))   validate_filters(filters, requiredFilters)
+  if (!is.null(filters))   validate_filters(filters, requiredFilters, library)
 
   if (!is.null(metric_func))  validate_metric_func_no_args(metric_func)
   if (!is.null(initial_func)) validate_initial_func_one_arg(initial_func)
 
   # --- Default Settings ---
-  keys <- switch(requiredFilters$administration,
-     "oral" = c("distribution", "absorption_delay", "distribution", "elimination"),
-     "oralBolus" = c("bioavailability", "distribution", "absorption_delay", "distribution", "elimination"),
-     c("distribution", "elimination")
-  )
+  # For custom library, keys are not needed (no default filters)
+  if (library != "custom") {
+    keys <- switch(requiredFilters$administration,
+       "oral" = c("distribution", "absorption_delay", "distribution", "elimination"),
+       "oralBolus" = c("bioavailability", "distribution", "absorption_delay", "distribution", "elimination"),
+       c("distribution", "elimination")
+    )
+  } else {
+    keys <- NULL
+  }
 
   if (is.null(settings)) settings <- list(iiv = FALSE, error = FALSE)
   if (is.null(settings$iiv)) settings$iiv <- FALSE
@@ -229,6 +240,9 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
   }
 
   validate_settings(settings, algorithm)
+  
+  # Validate custom model setup
+  validate_custom_model_setup(library, algorithm, model_creation_func, param_mapping, settings)
 
   # --- Override default settings ---
   if (!is.null(settings)) {
@@ -302,13 +316,15 @@ findModel <- function(project, library, requiredFilters, filters = NULL,
 
   switch(algorithm,
          ACO = {
-           return(runACO(library, filters, requiredFilters, settings, metric_func, initial_func))
+           return(runACO(library, filters, requiredFilters, settings, metric_func, initial_func,
+                         model_creation_func, param_mapping))
          },
          tournament = {
            return(runTournament(library, filters, requiredFilters, settings, metric_func, initial_func))
          },
          exhaustive_search = {
-           return(runExhaustiveSearch(library, filters, requiredFilters, settings, metric_func, initial_func))
+           return(runExhaustiveSearch(library, filters, requiredFilters, settings, metric_func, initial_func,
+                                      model_creation_func, param_mapping))
          },
          decision_tree = {
            return(runDecisionTree(library, filters, requiredFilters, settings, metric_func, initial_func))

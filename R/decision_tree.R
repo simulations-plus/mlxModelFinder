@@ -103,6 +103,12 @@ textify <- function(df, run = NULL) {
 
 runDecisionTree <- function(library, filters, requiredFilters, settings, metric_func, initial_func) {
 
+  # Validate that custom library is not used with decision tree
+  if (library == "custom") {
+    stop("Error: library='custom' is not supported with algorithm='decision_tree'. Use 'exhaustive_search' or 'ACO' instead.", 
+         call. = FALSE)
+  }
+
   # --- Initialization ---
   cli::cli_h1("Initializing Decision Tree Search")
 

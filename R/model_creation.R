@@ -92,7 +92,27 @@ updateModelContent <- function(model_content = NULL,
   return(lines)
 }
 
-getModelName <- function(library, filters = list()) {
+getModelName <- function(library, filters = list(), custom_func = NULL) {
+  # If custom function provided, use it directly
+  if (!is.null(custom_func)) {
+    model_path <- custom_func(library, filters)
+    
+    # Validate that a path was returned
+    if (is.null(model_path) || !is.character(model_path) || length(model_path) != 1) {
+      stop("Error: custom model_creation_func must return a single character string (model path).", 
+           call. = FALSE)
+    }
+    
+    # Validate that the file exists
+    if (!file.exists(model_path)) {
+      stop(sprintf("Error: custom model_creation_func returned non-existent path: %s", model_path), 
+           call. = FALSE)
+    }
+    
+    return(model_path)
+  }
+  
+  # Otherwise, use default implementation for standard libraries
   clean_filters <- .preprocess_filters(library, filters)
 
   is_library_pk <- library == "pk" &&
