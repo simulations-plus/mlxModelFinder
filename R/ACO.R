@@ -101,7 +101,20 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
           param_names <- intersect(param_names, expected_params)
         }
         
-        models$iiv[i, !(colnames(models$iiv) %in% param_names)] <- NA
+        # Set NA for IIV columns that don't correspond to actual model parameters
+        # Only do this if models$iiv exists and has the right dimensions
+        if (!is.null(models$iiv) && is.matrix(models$iiv) && 
+            nrow(models$iiv) >= i && ncol(models$iiv) > 0) {
+          # Find which columns in models$iiv are NOT in param_names
+          iiv_cols <- colnames(models$iiv)
+          if (!is.null(iiv_cols) && length(iiv_cols) > 0) {
+            cols_to_na <- !(iiv_cols %in% param_names)
+            # Only set to NA if there are columns to update
+            if (any(cols_to_na)) {
+              models$iiv[i, cols_to_na] <- NA
+            }
+          }
+        }
       }
     }
 
