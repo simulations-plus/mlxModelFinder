@@ -16,7 +16,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   # Initialize probabilities for the structural model components
   probas_struct <- probabilities(filters)
   struct_cols <- colnames(probas_struct$filters)
-  probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true) else NULL
+  probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true, param_mapping = param_mapping) else NULL
   iiv_cols <- if (settings$iiv && !is.null(probas_iiv)) colnames(probas_iiv$filters) else NULL
   probas_error <- if (settings$error) probabilities(list(error = c("constant", "proportional", "combined1", "combined2"))) else NULL
 

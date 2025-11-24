@@ -87,7 +87,7 @@ probabilities <- function(x, weights_override = NULL) {
   list(probas = probas, filters = filters, weights = weights)
 }
 
-iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FALSE) {
+iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FALSE, param_mapping = NULL) {
   if (library == "pk") {
     # param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
     #                 "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
@@ -97,9 +97,31 @@ iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FA
     param_map <- lapply(param_list, function(x) c(TRUE, FALSE))
     names(param_map) <- param_list
   } else if (library == "custom") {
-    # For custom libraries, IIV parameters are determined dynamically
-    # Return empty probabilities - ACO will handle this differently
-    return(NULL)
+    # For custom libraries, extract all possible parameters from param_mapping
+    if (is.null(param_mapping)) {
+      # No param_mapping provided - return NULL (will be handled dynamically)
+      return(NULL)
+    }
+    
+    # Extract all unique parameters from param_mapping
+    param_list <- param_mapping$common_params
+    
+    # Add filter-specific parameters
+    if (!is.null(param_mapping$filter_params)) {
+      for (filter_category in names(param_mapping$filter_params)) {
+        filter_values <- param_mapping$filter_params[[filter_category]]
+        for (filter_value in names(filter_values)) {
+          param_list <- c(param_list, filter_values[[filter_value]])
+        }
+      }
+    }
+    
+    # Get unique parameters
+    param_list <- unique(param_list)
+    
+    # Create param_map for IIV probabilities
+    param_map <- lapply(param_list, function(x) c(TRUE, FALSE))
+    names(param_map) <- param_list
   } else {
     stop("Unsupported library", call. = FALSE)
   }

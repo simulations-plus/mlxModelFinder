@@ -7,12 +7,14 @@
 findModel(
   project,
   library,
-  requiredFilters,
+  requiredFilters = NULL,
   filters = NULL,
   algorithm = NULL,
   settings = NULL,
   metric_func = NULL,
-  initial_func = NULL
+  initial_func = NULL,
+  model_creation_func = NULL,
+  param_mapping = NULL
 )
 }
 \arguments{
@@ -20,13 +22,16 @@ findModel(
 contains the dataset and SAEM settings. Estimation settings/seed are taken
 from the project.}
 
-\item{library}{(required) Model library to use. Options: \code{"pk"} (currently supported).}
+\item{library}{(required) Model library to use. Options: \code{"pk"} (built-in PK library),
+\code{"custom"} (user-defined models via \code{model_creation_func}).}
 
-\item{requiredFilters}{(required) Named list of \strong{required} structural components:
+\item{requiredFilters}{(optional for \code{library = "custom"}, required for \code{library = "pk"})
+Named list of \strong{required} structural components for the \code{"pk"} library:
 \itemize{
 \item \strong{administration}: \code{"bolus"}, \code{"infusion"}, \code{"oral"}, \code{"oralBolus"}
 \item \strong{parametrization}: \code{"rate"}, \code{"clearance"}
-}}
+}
+Not used when \code{library = "custom"}.}
 
 \item{filters}{(optional) Named list defining \strong{optional} structural components
 to explore. For the \code{"pk"} library:
@@ -92,6 +97,25 @@ after thorough testing for robustness and precision.}
 path) and \strong{returns a project path} (same or new) after setting initial values via
 \code{lixoftConnectors}. Use this to inject custom population initials before each run.
 If \code{NULL}, the package uses its internal/default initializer.}
+
+\item{model_creation_func}{(optional) \strong{Custom model creation function} for use with
+\code{library = "custom"}. Must be a function that accepts exactly two arguments:
+\code{library} (character) and \code{filters} (named list), and returns a character string
+containing the \strong{absolute path} to a valid Monolix model file. This allows you to
+use your own model library instead of the built-in PK library. When \code{library = "custom"},
+this parameter is \strong{required}. Only compatible with \code{algorithm = "exhaustive_search"}
+or \code{algorithm = "ACO"} (not compatible with \code{"decision_tree"}).}
+
+\item{param_mapping}{(optional) \strong{Parameter mapping structure} for custom models with IIV.
+Required when \code{library = "custom"} and \code{settings$iiv = TRUE}. Must be a named list with:
+\itemize{
+\item \strong{common_params}: Character vector of parameter names present in all models
+\item \strong{filter_params}: Named list where each name corresponds to a filter category
+(e.g., "absorption"), and each value is a named list mapping filter values
+(e.g., "firstOrder") to character vectors of parameter names specific to that filter value
+}
+This structure tells the algorithm which parameters are available for IIV exploration
+in each model variant. See vignette for detailed examples.}
 }
 \value{
 A list that contains:
@@ -171,6 +195,26 @@ res <- findModel(
   requiredFilters = list(administration = "oral", parametrization = "clearance"),
   algorithm = "decision_tree",
   settings = list(findIIV = TRUE)
+)
+
+# Example 6: Custom model library with exhaustive search
+# Define a custom model creation function
+my_custom_func <- function(library, filters) {
+  # Return path to appropriate model file based on filters
+  if (filters$absorption == "firstOrder") {
+    return("/path/to/my/first_order_model.txt")
+  } else {
+    return("/path/to/my/zero_order_model.txt")
+  }
+}
+
+res <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(absorption = c("firstOrder", "zeroOrder")),
+  algorithm = "exhaustive_search",
+  model_creation_func = my_custom_func,
+  settings = list(iiv = FALSE, error = FALSE)
 )
 }
 
