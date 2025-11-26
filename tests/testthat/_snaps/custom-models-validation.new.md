@@ -40,7 +40,7 @@
       param_mapping = list(common_params = c("V", "Cl")), settings = list(iiv = TRUE,
         plot = FALSE, max_models = 1))
     Message
-      i Search space size: 8 models
+      i Search space size: 4 models
     Condition
       Error:
       ! Error: 'param_mapping' must contain 'filter_params' and 'common_params' elements.
@@ -53,7 +53,7 @@
       param_mapping = list(filter_params = list()), settings = list(iiv = TRUE, plot = FALSE,
         max_models = 1))
     Message
-      i Search space size: 8 models
+      i Search space size: 1 models
     Condition
       Error:
       ! Error: 'param_mapping' must contain 'filter_params' and 'common_params' elements.
@@ -66,7 +66,7 @@
       param_mapping = list(common_params = list("V", "Cl"), filter_params = list()),
       settings = list(iiv = TRUE, plot = FALSE, max_models = 1))
     Message
-      i Search space size: 8 models
+      i Search space size: 4 models
     Condition
       Error:
       ! Error: 'param_mapping$common_params' must be a character vector.
@@ -79,7 +79,7 @@
       param_mapping = list(common_params = c("V", "Cl"), filter_params = c("ka",
         "Tk0")), settings = list(iiv = TRUE, plot = FALSE, max_models = 1))
     Message
-      i Search space size: 8 models
+      i Search space size: 4 models
     Condition
       Error:
       ! Error: 'param_mapping$filter_params' must be a list.

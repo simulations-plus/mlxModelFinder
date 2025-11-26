@@ -155,7 +155,7 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   )
 }
 
-calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
+calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, param_mapping = NULL) {
   if (library == "pk") {
     absorption_delays <- max(sum(filters$absorption != "transitCompartments"), 1) * length(filters$delay)
     direct_abs <- sum(filters$absorption == "transitCompartments")
@@ -216,9 +216,31 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE) {
 
       space <- sum(2^all_models$total_params)
     } else if (library == "custom") {
-      # For custom libraries, use a conservative estimate
-      # Assume average of 3 parameters per model, giving 2^3 = 8 IIV combinations
-      space <- space * 8
+      # For custom libraries, use param_mapping if available
+      if (!is.null(param_mapping)) {
+        # Calculate accurate IIV space based on param_mapping
+        # Generate all structural model combinations
+        all_models <- expand.grid(filters, stringsAsFactors = FALSE)
+        
+        # For each structural model, count parameters
+        total_iiv_space <- 0
+        for (i in 1:nrow(all_models)) {
+          model_filters <- as.list(all_models[i, , drop = FALSE])
+          
+          # Get parameters for this model variant
+          params <- getParamListFromMapping(model_filters, param_mapping)
+          n_params <- length(params)
+          
+          # Each parameter can have IIV on or off: 2^n_params combinations
+          total_iiv_space <- total_iiv_space + 2^n_params
+        }
+        
+        space <- total_iiv_space
+      } else {
+        # No param_mapping - use conservative estimate
+        # Assume average of 3 parameters per model, giving 2^3 = 8 IIV combinations
+        space <- space * 8
+      }
     }
   }
   if (error) space <- space * 4

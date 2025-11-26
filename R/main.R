@@ -270,7 +270,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   # --- Setup ---
   set.seed(settings$seed)
   filters <- updateFilters(library, filters, requiredFilters)
-  space <- calculateSearchSpace(library, filters, settings$error, settings$iiv)
+  space <- calculateSearchSpace(library, filters, settings$error, settings$iiv, param_mapping)
   cli::cli_alert_info("Search space size: {space} models")
 
   # --- Algorithm Selection ---
