@@ -230,7 +230,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     iter_results_list <- unname(Filter(Negate(is.null), iter_results_list))
 
     # --- Search with XGBoost if stagnating ---
-    if (settings$xgboost && settings$iiv && settings$error && stagnation_count == 7) {
+    if (settings$xgboost && settings$iiv && settings$error && stagnation_count == settings$stagnation_xgboost) {
       cli::cli_alert_info("Stagnation detected. Searching with XGBoost...")
 
       list_of_runs_df <- do.call(rbind, list_of_runs)
@@ -239,7 +239,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       xgb_runs <- train_xgb_and_propose(
         list_of_runs = list_of_runs_df,
         probas_struct = probas_struct, probas_iiv = probas_iiv, probas_error = probas_error,
-        N = settings$xgboost_model_nb, requiredFilters = requiredFilters
+        N = settings$xgboost_model_nb, requiredFilters = requiredFilters,
+        library = library, param_mapping = param_mapping
       )
 
       xgb_runs$pred_score <- NULL
@@ -419,7 +420,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     # --- Check for Convergence ---
     stagnation_count <- stagnation_count + 1
 
-    if (stagnation_count >= 8) {
+    if (stagnation_count >= settings$stagnation_stop) {
       cli::cli_alert_success("Convergence criteria met. {stagnation_count} iterations without improvement.")
       break
     }

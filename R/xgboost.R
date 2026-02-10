@@ -1,68 +1,87 @@
-make_applicable <- function(struct_features, param_df, param_cols, requiredFilters = list()) {
+make_applicable <- function(struct_features, param_df, param_cols, requiredFilters = list(), library = "pk", param_mapping = NULL) {
 
   params_out <- as.data.frame(param_df)
 
-  # Helper to create a logical vector for a given rule across all rows.
-  # It checks both the candidate's own features and the fixed requiredFilters.
-  is_rule <- function(feature) {
-    required_vals <- as.character(unlist(requiredFilters))
-    apply(struct_features, 1, function(row) {
-      all_features_for_row <- c(as.character(row), required_vals)
-      feature %in% all_features_for_row
-    })
-  }
-
-  # --- Create logical vectors for each rule ---
-  has_no_delay        <- is_rule("noDelay")
-  is_first_order      <- is_rule("firstOrder")
-  is_zero_order       <- is_rule("zeroOrder")
-  is_sigmoid          <- is_rule("sigmoid")
-  is_transit          <- is_rule("transitCompartments")
-  is_1cpt             <- is_rule("1compartment")
-  is_2cpt             <- is_rule("2compartments")
-  is_3cpt             <- is_rule("3compartments")
-  is_linear_elim      <- is_rule("linear")
-  is_mm_elim          <- is_rule("MichaelisMenten")
-  has_bioavailability <- is_rule("true")
-  is_clearance_param  <- is_rule("clearance")
-  is_rate_param       <- is_rule("rate")
-
-  has_any_absorption  <- is_first_order | is_zero_order | is_sigmoid | is_transit
-
-  # --- Vectorized application of rules ---
-  set_na_if <- function(df, condition, cols) {
-    valid_cols <- intersect(cols, names(df))
-    if (length(valid_cols) > 0 && any(condition)) {
-      df[condition, valid_cols] <- NA
+  if (library == "custom" && !is.null(param_mapping)) {
+    # For custom libraries, use param_mapping to determine valid parameters
+    # For each row (model), determine which parameters are applicable
+    for (i in 1:nrow(struct_features)) {
+      # Get the structural features for this model
+      model_filters <- as.list(struct_features[i, , drop = FALSE])
+      
+      # Get valid parameters for this model variant
+      valid_params <- getParamListFromMapping(model_filters, param_mapping)
+      
+      # Set NA for parameters not in valid_params
+      invalid_params <- setdiff(param_cols, valid_params)
+      if (length(invalid_params) > 0) {
+        params_out[i, invalid_params] <- NA
+      }
     }
-    return(df)
+  } else if (library == "pk") {
+    # Original PK-specific logic
+    # Helper to create a logical vector for a given rule across all rows.
+    # It checks both the candidate's own features and the fixed requiredFilters.
+    is_rule <- function(feature) {
+      required_vals <- as.character(unlist(requiredFilters))
+      apply(struct_features, 1, function(row) {
+        all_features_for_row <- c(as.character(row), required_vals)
+        feature %in% all_features_for_row
+      })
+    }
+
+    # --- Create logical vectors for each rule ---
+    has_no_delay        <- is_rule("noDelay")
+    is_first_order      <- is_rule("firstOrder")
+    is_zero_order       <- is_rule("zeroOrder")
+    is_sigmoid          <- is_rule("sigmoid")
+    is_transit          <- is_rule("transitCompartments")
+    is_1cpt             <- is_rule("1compartment")
+    is_2cpt             <- is_rule("2compartments")
+    is_3cpt             <- is_rule("3compartments")
+    is_linear_elim      <- is_rule("linear")
+    is_mm_elim          <- is_rule("MichaelisMenten")
+    has_bioavailability <- is_rule("true")
+    is_clearance_param  <- is_rule("clearance")
+    is_rate_param       <- is_rule("rate")
+
+    has_any_absorption  <- is_first_order | is_zero_order | is_sigmoid | is_transit
+
+    # --- Vectorized application of rules ---
+    set_na_if <- function(df, condition, cols) {
+      valid_cols <- intersect(cols, names(df))
+      if (length(valid_cols) > 0 && any(condition)) {
+        df[condition, valid_cols] <- NA
+      }
+      return(df)
+    }
+
+    # Delay
+    params_out <- set_na_if(params_out, has_no_delay, "Tlag")
+
+    # Absorption
+    params_out <- set_na_if(params_out, is_first_order, c("Tk0", "Ktr", "Mtt", "Tk0s"))
+    params_out <- set_na_if(params_out, is_zero_order, c("ka", "Ktr", "Mtt", "Tk0s"))
+    params_out <- set_na_if(params_out, is_sigmoid, c("Tk0", "Ktr", "Mtt"))
+    params_out <- set_na_if(params_out, is_transit, c("Tk0", "Tk0s", "Tlag"))
+    params_out <- set_na_if(params_out, !has_any_absorption, c("ka", "Tk0", "Tk0s", "Ktr", "Mtt"))
+
+    # Distribution
+    params_out <- set_na_if(params_out, is_1cpt, c("V1", "V2", "V3", "Q2", "Q", "Q3", "k12", "k21", "k31", "k13"))
+    params_out <- set_na_if(params_out, is_2cpt, c("V", "Q2", "V3", "Q3", "k13", "k31"))
+    params_out <- set_na_if(params_out, is_3cpt, c("V", "Q"))
+
+    # Elimination
+    params_out <- set_na_if(params_out, is_linear_elim, c("Km", "Vm"))
+    params_out <- set_na_if(params_out, is_mm_elim, c("Cl", "k"))
+
+    # Bioavailability
+    params_out <- set_na_if(params_out, !has_bioavailability, "F")
+
+    # Parametrization
+    params_out <- set_na_if(params_out, is_clearance_param, c("k12", "k21", "k13", "k31", "k"))
+    params_out <- set_na_if(params_out, is_rate_param, c("Q", "Q2", "Q3", "Cl"))
   }
-
-  # Delay
-  params_out <- set_na_if(params_out, has_no_delay, "Tlag")
-
-  # Absorption
-  params_out <- set_na_if(params_out, is_first_order, c("Tk0", "Ktr", "Mtt", "Tk0s"))
-  params_out <- set_na_if(params_out, is_zero_order, c("ka", "Ktr", "Mtt", "Tk0s"))
-  params_out <- set_na_if(params_out, is_sigmoid, c("Tk0", "Ktr", "Mtt"))
-  params_out <- set_na_if(params_out, is_transit, c("Tk0", "Tk0s", "Tlag"))
-  params_out <- set_na_if(params_out, !has_any_absorption, c("ka", "Tk0", "Tk0s", "Ktr", "Mtt"))
-
-  # Distribution
-  params_out <- set_na_if(params_out, is_1cpt, c("V1", "V2", "V3", "Q2", "Q", "Q3", "k12", "k21", "k31", "k13"))
-  params_out <- set_na_if(params_out, is_2cpt, c("V", "Q2", "V3", "Q3", "k13", "k31"))
-  params_out <- set_na_if(params_out, is_3cpt, c("V", "Q"))
-
-  # Elimination
-  params_out <- set_na_if(params_out, is_linear_elim, c("Km", "Vm"))
-  params_out <- set_na_if(params_out, is_mm_elim, c("Cl", "k"))
-
-  # Bioavailability
-  params_out <- set_na_if(params_out, !has_bioavailability, "F")
-
-  # Parametrization
-  params_out <- set_na_if(params_out, is_clearance_param, c("k12", "k21", "k13", "k31", "k"))
-  params_out <- set_na_if(params_out, is_rate_param, c("Q", "Q2", "Q3", "Cl"))
 
   # --- Finalize: Ensure all required columns exist and are correctly ordered ---
   missing_cols <- setdiff(param_cols, names(params_out))
@@ -162,12 +181,14 @@ train_xgb_and_propose <- function(
     iiv_max_combos = 10000L,
     max_total_combos = 200000L,
     requiredFilters = list(),
-    modelsToTest = NULL
+    modelsToTest = NULL,
+    library = "pk",
+    param_mapping = NULL
 ) {
 
   # --- 1. SETUP ---
   struct_cols <- colnames(probas_struct$filters)
-  param_cols <- colnames(probas_iiv$filters)
+  param_cols <- if (!is.null(probas_iiv)) colnames(probas_iiv$filters) else character(0)
   error_col <- colnames(probas_error$filters)[1]
   all_feature_cols <- c(struct_cols, error_col, param_cols)
 
@@ -221,7 +242,15 @@ train_xgb_and_propose <- function(
   if (is.null(modelsToTest)) {
     # --- A: Generate candidates automatically ---
     struct_candidates <- build_candidates(probas_struct, list_of_runs, struct_cols, struct_max_combos)
-    iiv_candidates <- build_candidates(probas_iiv, list_of_runs, param_cols, iiv_max_combos)
+    
+    # Handle IIV candidates - if no IIV, create a single-row dummy dataframe
+    if (!is.null(probas_iiv) && length(param_cols) > 0) {
+      iiv_candidates <- build_candidates(probas_iiv, list_of_runs, param_cols, iiv_max_combos)
+    } else {
+      # No IIV - create dummy single row
+      iiv_candidates <- data.frame(row.names = 1)
+    }
+    
     error_candidates <- build_candidates(probas_error, list_of_runs, error_col, Inf)
 
     indices <- expand.grid(
@@ -242,7 +271,9 @@ train_xgb_and_propose <- function(
       struct_features = struct_part,
       param_df = iiv_part,
       param_cols = param_cols,
-      requiredFilters = requiredFilters
+      requiredFilters = requiredFilters,
+      library = library,
+      param_mapping = param_mapping
     )
 
     candidates <- cbind(struct_part, error_part, fixed_iivs_df)
@@ -261,7 +292,9 @@ train_xgb_and_propose <- function(
       struct_features = struct_part_user,
       param_df = param_part_user,
       param_cols = param_cols,
-      requiredFilters = requiredFilters
+      requiredFilters = requiredFilters,
+      library = library,
+      param_mapping = param_mapping
     )
 
     candidates <- cbind(struct_part_user, fixed_iivs_df)

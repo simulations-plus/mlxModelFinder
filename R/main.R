@@ -263,6 +263,8 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
     clip = FALSE,
     xgboost = TRUE,
     xgboost_model_nb = 5,
+    stagnation_xgboost = 7,
+    stagnation_stop = 8,
     local_search = FALSE,
     table_func = NULL
   )
