@@ -93,15 +93,15 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
         
         # Intersect to get valid IIV parameters for this model
         valid_iiv_params <- intersect(model_params, available_params)
-        
+
         if (length(valid_iiv_params) > 0) {
-          variability_df <- as.data.frame(
+          variability_df <- as.data.frame(as.list(
             lixoftConnectors::getIndividualParameterModel()$variability$id
-          )
-          
+          ))
+
           # Only select columns that actually exist in the data frame
           existing_cols <- intersect(valid_iiv_params, names(variability_df))
-          
+
           if (length(existing_cols) > 0) {
             default_iiv <- variability_df[, existing_cols, drop = FALSE]
             iiv_combos <- expand.grid(lapply(default_iiv, function(x) c(TRUE, FALSE)))
