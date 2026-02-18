@@ -408,3 +408,34 @@ getParamListFromMapping <- function(filters, param_mapping) {
   
   return(unique(params))
 }
+
+# Generate IIV combinations, respecting fixed_iiv constraints.
+# default_iiv: 1-row data frame with TRUE/FALSE columns for each param
+# fixed_iiv: named logical list (or NULL) locking params to TRUE/FALSE
+apply_fixed_iiv <- function(default_iiv, fixed_iiv = NULL) {
+  iiv_cols <- names(default_iiv)
+
+  # Determine which params are fixed vs free
+  if (!is.null(fixed_iiv)) {
+    fixed_params <- intersect(names(fixed_iiv), iiv_cols)
+  } else {
+    fixed_params <- character(0)
+  }
+  free_params <- setdiff(iiv_cols, fixed_params)
+
+  # Generate combinations for free params only
+  if (length(free_params) > 0) {
+    iiv_combos <- expand.grid(
+      setNames(rep(list(c(TRUE, FALSE)), length(free_params)), free_params)
+    )
+  } else {
+    iiv_combos <- data.frame(row.names = 1)
+  }
+
+  # Add fixed params as constant columns
+  for (p in fixed_params) {
+    iiv_combos[[p]] <- fixed_iiv[[p]]
+  }
+
+  iiv_combos
+}

@@ -341,6 +341,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       improved <- FALSE
       params <- lixoftConnectors::getIndividualParameterModel()$variability[[1]]
       params_wo_var <- params[params]
+      # Remove fixed IIV params from exploration (TRUE-locked stay on, FALSE-locked already off)
+      if (!is.null(settings$fixed_iiv)) {
+        params_wo_var <- params_wo_var[!names(params_wo_var) %in% names(settings$fixed_iiv)]
+      }
       base_params <- params
 
       if (settings$plot) {

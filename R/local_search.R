@@ -14,7 +14,12 @@ runLocalSearch <- function(model, model_info, list_of_runs,
     model_df <- base_model_info
     improved <- FALSE
 
-    for (param in names(params)) {
+    free_params <- names(params)
+    if (!is.null(settings$fixed_iiv)) {
+      free_params <- setdiff(free_params, names(settings$fixed_iiv))
+    }
+
+    for (param in free_params) {
 
       new_params <- replace(params, param, !params[[param]])
       new_model_df <- replace(model_df, param, !params[[param]])

@@ -87,7 +87,7 @@ probabilities <- function(x, weights_override = NULL) {
   list(probas = probas, filters = filters, weights = weights)
 }
 
-iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FALSE, param_mapping = NULL) {
+iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FALSE, param_mapping = NULL, fixed_iiv = NULL) {
   if (library == "pk") {
     # param_list <- c("ka", "Tk0", "Tk0s", "Tlag", "Ktr", "Mtt",
     #                 "V", "V1", "Cl", "Q", "Q2", "V2", "Q3", "V3",
@@ -124,6 +124,15 @@ iiv_probabilities <- function(library, filters, requiredFilters, favor_true = FA
     names(param_map) <- param_list
   } else {
     stop("Unsupported library", call. = FALSE)
+  }
+
+  # Lock fixed IIV params to single values
+  if (!is.null(fixed_iiv)) {
+    for (p in names(fixed_iiv)) {
+      if (p %in% names(param_map)) {
+        param_map[[p]] <- fixed_iiv[[p]]
+      }
+    }
   }
 
   if (!favor_true) {

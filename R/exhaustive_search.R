@@ -87,10 +87,10 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
           model_filters,
           param_mapping
         )
-        
+
         # Get actual parameters from Monolix
         available_params <- lixoftConnectors::getIndividualParameterModel()$name
-        
+
         # Intersect to get valid IIV parameters for this model
         valid_iiv_params <- intersect(model_params, available_params)
 
@@ -104,7 +104,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
           if (length(existing_cols) > 0) {
             default_iiv <- variability_df[, existing_cols, drop = FALSE]
-            iiv_combos <- expand.grid(lapply(default_iiv, function(x) c(TRUE, FALSE)))
+            iiv_combos <- apply_fixed_iiv(default_iiv, settings$fixed_iiv)
           } else {
             iiv_combos <- data.frame(row.names = 1)
           }
@@ -117,7 +117,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
           lixoftConnectors::getIndividualParameterModel()$variability$id
         ))
         if (ncol(default_iiv) > 0) {
-          iiv_combos <- expand.grid(lapply(default_iiv, function(x) c(TRUE, FALSE)))
+          iiv_combos <- apply_fixed_iiv(default_iiv, settings$fixed_iiv)
         } else {
           iiv_combos <- data.frame(row.names = 1)
         }

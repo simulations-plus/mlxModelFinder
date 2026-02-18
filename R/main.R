@@ -111,6 +111,13 @@
 #'     \item \code{"logitNormal"}
 #'   }
 #'   Example: \code{param_distributions = list(V = "logNormal", Cl = "logNormal", ka = "logNormal")}
+#' @param fixed_iiv (optional) Named logical list that locks IIV on specific parameters.
+#'   Parameters set to \code{TRUE} always have IIV (never removed by the search).
+#'   Parameters set to \code{FALSE} never have IIV (never added by the search).
+#'   Parameters not listed are explored freely by the algorithm.
+#'   Only used when \code{settings$iiv = TRUE}. Parameters not present in the
+#'   current model are silently ignored.
+#'   Example: \code{fixed_iiv = list(Cl = TRUE, V = TRUE, ka = FALSE)}
 #'
 #' @return A list that contains:
 #'   \itemize{
@@ -209,7 +216,8 @@
 findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
                       algorithm = NULL, settings = NULL, metric_func = NULL,
                       initial_func = NULL, model_creation_func = NULL,
-                      param_mapping = NULL, param_distributions = NULL) {
+                      param_mapping = NULL, param_distributions = NULL,
+                      fixed_iiv = NULL) {
 
   op = options()
   op$lixoft_notificationOptions$warnings = 1
@@ -238,6 +246,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   if (!is.null(metric_func))  validate_metric_func_no_args(metric_func)
   if (!is.null(initial_func)) validate_initial_func_one_arg(initial_func)
   if (!is.null(param_distributions)) validate_param_distributions(param_distributions)
+  if (!is.null(fixed_iiv)) validate_fixed_iiv(fixed_iiv)
 
   # --- Default Settings ---
   # For custom library, keys are not needed (no default filters)
@@ -304,6 +313,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   }
   settings <- default_settings
   settings$param_distributions <- param_distributions
+  settings$fixed_iiv <- fixed_iiv
 
   # --- Do not plot diagrams / progress if packages not installed ---
   if (isTRUE(settings$plot) && identical(algorithm, "decision_tree")) {
@@ -347,6 +357,17 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
     return(x)
   })
   names(init_var) <- names(lixoftConnectors::getIndividualParameterModel()$variability)
+
+  # Apply fixed_iiv constraints to initial variability
+  if (!is.null(fixed_iiv)) {
+    id_var <- init_var[["id"]]
+    for (p in names(fixed_iiv)) {
+      if (p %in% names(id_var)) {
+        id_var[[p]] <- fixed_iiv[[p]]
+      }
+    }
+    init_var[["id"]] <- id_var
+  }
 
   init_cor <- lixoftConnectors::getIndividualParameterModel()$correlationBlocks
   init_cor <- lapply(init_cor, function(x) list())

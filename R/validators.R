@@ -369,3 +369,13 @@ validate_param_distributions <- function(param_distributions) {
   }
   return(TRUE)
 }
+
+validate_fixed_iiv <- function(fixed_iiv) {
+  if (!is.list(fixed_iiv) || is.null(names(fixed_iiv))) {
+    stop("'fixed_iiv' must be a named list, e.g. list(Cl = TRUE, ka = FALSE)")
+  }
+  if (!all(sapply(fixed_iiv, is.logical))) {
+    stop("All values in 'fixed_iiv' must be TRUE or FALSE")
+  }
+  return(TRUE)
+}

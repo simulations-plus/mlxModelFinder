@@ -16,7 +16,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   # Initialize probabilities for the structural model components
   probas_struct <- probabilities(filters)
   struct_cols <- colnames(probas_struct$filters)
-  probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true, param_mapping = param_mapping) else NULL
+  probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true, param_mapping = param_mapping, fixed_iiv = settings$fixed_iiv) else NULL
   iiv_cols <- if (settings$iiv && !is.null(probas_iiv)) colnames(probas_iiv$filters) else NULL
   probas_error <- if (settings$error) probabilities(list(error = c("constant", "proportional", "combined1", "combined2"))) else NULL
 
@@ -114,6 +114,15 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
               models$iiv[i, cols_to_na] <- NA
             }
           }
+        }
+      }
+    }
+
+    # Override fixed IIV parameters
+    if (settings$iiv && !is.null(settings$fixed_iiv) && !is.null(models$iiv)) {
+      for (p in names(settings$fixed_iiv)) {
+        if (p %in% colnames(models$iiv)) {
+          models$iiv[, p] <- settings$fixed_iiv[[p]]
         }
       }
     }

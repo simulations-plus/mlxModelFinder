@@ -8,7 +8,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
 
   # Initialize probabilities for interindividual variability (IIV)
   if (settings$iiv) {
-    probas_iiv <- iiv_probabilities(library, filters, requiredFilters)
+    probas_iiv <- iiv_probabilities(library, filters, requiredFilters, fixed_iiv = settings$fixed_iiv)
   }
 
   # Initialize probabilities for error model
@@ -78,6 +78,14 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
       if (settings$iiv) {
         param_names <- lixoftConnectors::getIndividualParameterModel()$name
         current_model$iiv[1, !(colnames(current_model$iiv) %in% param_names)] <- NA
+        # Override fixed IIV parameters
+        if (!is.null(settings$fixed_iiv)) {
+          for (p in names(settings$fixed_iiv)) {
+            if (p %in% colnames(current_model$iiv)) {
+              current_model$iiv[1, p] <- settings$fixed_iiv[[p]]
+            }
+          }
+        }
         current_model_df <- cbind(current_model_df, as.data.frame(current_model$iiv))
       }
 
