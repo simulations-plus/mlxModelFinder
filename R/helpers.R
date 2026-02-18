@@ -87,7 +87,8 @@ calculateMetricBICc <- function() {
 }
 
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
-                     obsIDToUse = NULL, linearization = FALSE) {
+                     obsIDToUse = NULL, linearization = FALSE,
+                     param_distributions = NULL) {
 
   error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
   lixoftConnectors::setStructuralModel(model)
@@ -117,6 +118,14 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
     }
     iiv <- unlist(iiv[, !is.na(iiv[1, ])])
     lixoftConnectors::setIndividualParameterModel(list(variability = list(id = iiv)))
+  }
+
+  if (!is.null(param_distributions)) {
+    current_params <- lixoftConnectors::getIndividualParameterModel()$name
+    dists_to_set <- param_distributions[names(param_distributions) %in% current_params]
+    if (length(dists_to_set) > 0) {
+      do.call(lixoftConnectors::setIndividualParameterDistribution, dists_to_set)
+    }
   }
 
   if (!is.null(error)) {

@@ -1,0 +1,621 @@
+---
+title: "Parallel Execution: Local and Cluster Computing"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Parallel Execution: Local and Cluster Computing}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE  # Set to TRUE if you have Monolix installed
+)
+```
+
+## Introduction
+
+The `mlxModelFinder` package supports parallel execution for both the **ACO** and **exhaustive search** algorithms, dramatically reducing computation time when evaluating many models. This vignette demonstrates how to:
+
+- Run models in parallel on your local machine (multi-core)
+- Submit jobs to HPC clusters (Slurm, PBS, SGE, etc.)
+- Configure parallel execution settings
+- Monitor progress and troubleshoot issues
+
+## Why Use Parallel Execution?
+
+Model selection often requires evaluating hundreds or thousands of models. With parallel execution:
+
+- **Exhaustive search**: Evaluate all model combinations simultaneously
+- **ACO iterations**: Run all ants in each iteration in parallel
+- **Time savings**: Linear speedup with the number of cores/workers
+
+Example: Evaluating 500 models that each take 2 minutes:
+- **Sequential**: ~16.7 hours
+- **Parallel (20 cores)**: ~50 minutes
+
+## Prerequisites
+
+Install the required packages:
+
+```{r}
+install.packages("future")
+install.packages("future.apply")
+install.packages("progressr")  # For progress tracking
+
+# For cluster execution (optional)
+install.packages("future.batchtools")
+```
+
+## Local Parallel Execution
+
+### Basic Setup
+
+The simplest way to run models in parallel is using `multisession` on your local machine:
+
+```{r}
+library(mlxModelFinder)
+library(future)
+library(future.apply)
+library(progressr)
+
+# Configure parallel execution with 4 workers
+plan(multisession, workers = 4)
+
+# Run your model search as usual
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  algorithm = "exhaustive_search",
+  settings = list(iiv = TRUE, error = TRUE)
+)
+
+# Don't forget to reset to sequential when done
+plan(sequential)
+```
+
+### Choosing the Number of Workers
+
+```{r}
+# Use all available cores minus 1 (to keep system responsive)
+library(parallel)
+n_cores <- detectCores() - 1
+plan(multisession, workers = n_cores)
+
+# Or specify explicitly
+plan(multisession, workers = 8)
+```
+
+**Important considerations:**
+
+- Each worker runs a full Monolix estimation
+- Memory usage scales with the number of workers
+- Leave 1-2 cores free for system responsiveness
+- Monitor RAM usage, especially with large datasets
+
+### Example: Exhaustive Search in Parallel
+
+```{r}
+library(mlxModelFinder)
+library(future)
+library(future.apply)
+library(progressr)
+
+# Setup parallel execution
+plan(multisession, workers = 8)
+
+# Enable progress tracking
+handlers(global = TRUE)
+handlers("progress")
+
+# Run exhaustive search
+with_progress({
+  result <- findModel(
+    project = file.path(getDemoPath(), "1.creating_and_using_models",
+                       "1.1.libraries_of_models", "theophylline_project.mlxtran"),
+    library = "pk",
+    requiredFilters = list(administration = "oral", parametrization = "clearance"),
+    filters = list(
+      absorption = c("zeroOrder", "firstOrder"),
+      distribution = c("1compartment", "2compartments")
+    ),
+    algorithm = "exhaustive_search",
+    settings = list(
+      iiv = TRUE,
+      error = TRUE,
+      plot = FALSE,  # Disable plotting in parallel mode
+      output = "exhaustive_results.csv"
+    )
+  )
+})
+
+# Reset to sequential
+plan(sequential)
+
+# View results
+print(result$best_model)
+```
+
+### Example: ACO in Parallel
+
+ACO runs ants in parallel within each iteration:
+
+```{r}
+library(future)
+library(future.apply)
+
+# Setup
+plan(multisession, workers = 10)
+
+# Run ACO - each ant per iteration runs in parallel
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  algorithm = "ACO",
+  settings = list(
+    N = 20,           # 20 ants per iteration (parallelized)
+    max_models = 500,
+    iiv = TRUE,
+    error = TRUE,
+    plot = FALSE
+  )
+)
+
+plan(sequential)
+```
+
+## Cluster Execution
+
+For large searches, submit jobs to an HPC cluster using `future.batchtools`.
+
+### Slurm Cluster
+
+```{r}
+library(future)
+library(future.batchtools)
+
+# Configure Slurm backend
+plan(batchtools_slurm,
+     workers = 50,  # Number of cluster jobs
+     resources = list(
+       walltime = "02:00:00",        # 2 hours per job
+       memory = "4GB",                # RAM per job
+       ncpus = 1,                     # CPUs per job
+       partition = "compute"          # Slurm partition
+     ))
+
+# Run your search - jobs will be submitted to Slurm
+result <- findModel(
+  project = "/path/to/project.mlxtran",
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  algorithm = "exhaustive_search",
+  settings = list(
+    iiv = TRUE,
+    error = TRUE,
+    plot = FALSE,
+    output = "cluster_results.csv"
+  )
+)
+```
+
+### PBS/Torque Cluster
+
+```{r}
+library(future.batchtools)
+
+plan(batchtools_torque,
+     workers = 30,
+     resources = list(
+       walltime = "02:00:00",
+       memory = "4GB",
+       nodes = 1,
+       queue = "batch"
+     ))
+```
+
+### SGE (Sun Grid Engine)
+
+```{r}
+plan(batchtools_sge,
+     workers = 40,
+     resources = list(
+       walltime = "02:00:00",
+       memory = "4GB"
+     ))
+```
+
+### Custom Cluster Configuration
+
+For advanced cluster configurations, create a `.batchtools.conf.R` file:
+
+```{r}
+# .batchtools.conf.R in your working directory or home directory
+
+cluster.functions = makeClusterFunctionsSlurm(
+  template = "/path/to/custom_template.tmpl"
+)
+
+# Custom Slurm template (custom_template.tmpl):
+# #!/bin/bash
+# #SBATCH --job-name=<%= job.name %>
+# #SBATCH --output=<%= log.file %>
+# #SBATCH --time=<%= resources$walltime %>
+# #SBATCH --mem=<%= resources$memory %>
+# #SBATCH --cpus-per-task=<%= resources$ncpus %>
+# #SBATCH --partition=<%= resources$partition %>
+#
+# module load R/4.2.0
+# Rscript -e '<%= job.code %>'
+```
+
+## Progress Monitoring
+
+### Local Progress Tracking
+
+```{r}
+library(progressr)
+
+# Enable progress bars
+handlers(global = TRUE)
+handlers("progress")
+
+# Your code will now show progress
+with_progress({
+  result <- findModel(...)
+})
+```
+
+### Cluster Job Monitoring
+
+When using cluster execution, monitor jobs using cluster commands:
+
+```{bash}
+# Slurm
+squeue -u $USER
+scancel <job_id>  # Cancel a job
+
+# PBS
+qstat -u $USER
+qdel <job_id>
+
+# SGE
+qstat
+qdel <job_id>
+```
+
+Check output logs:
+
+```{r}
+# Logs are typically in .batchtools.logs/ directory
+list.files(".batchtools.logs", recursive = TRUE)
+```
+
+## Best Practices
+
+### 1. Test Locally First
+
+Always test your setup with a small search space before scaling up:
+
+```{r}
+# Test with sequential execution first
+plan(sequential)
+result_test <- findModel(
+  project = "my_project.mlxtran",
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  filters = list(absorption = c("firstOrder")),  # Only 1 option
+  algorithm = "exhaustive_search",
+  settings = list(iiv = FALSE, error = FALSE)
+)
+
+# Then test with 2 workers
+plan(multisession, workers = 2)
+# ... run again
+
+# Finally scale up
+plan(multisession, workers = 10)
+```
+
+### 2. Disable Plotting in Parallel Mode
+
+Plotting is not recommended with parallel execution:
+
+```{r}
+settings = list(
+  plot = FALSE,  # Always set to FALSE for parallel
+  iiv = TRUE,
+  error = TRUE
+)
+```
+
+### 3. Save Results Incrementally
+
+Use the `output` parameter to save results:
+
+```{r}
+settings = list(
+  output = "results_backup.csv",  # Saves all results
+  iiv = TRUE,
+  error = TRUE
+)
+```
+
+### 4. Manage Memory
+
+Monitor memory usage, especially with many workers:
+
+```{r}
+# Check available memory
+memory.limit()  # Windows
+system("free -h")  # Linux
+
+# Reduce workers if memory is limited
+plan(multisession, workers = 4)  # Instead of 16
+```
+
+### 5. Set Random Seeds
+
+Ensure reproducibility:
+
+```{r}
+settings = list(
+  seed = 123456,  # Set seed
+  iiv = TRUE,
+  error = TRUE
+)
+```
+
+The `future_seed = TRUE` argument in `future_lapply` ensures reproducible parallel execution.
+
+## Troubleshooting
+
+### Issue: "Cannot open another X11 device"
+
+**Solution**: Disable plotting in parallel mode:
+
+```{r}
+settings = list(plot = FALSE, ...)
+```
+
+### Issue: Workers crash or hang
+
+**Possible causes:**
+- Out of memory
+- Monolix license limitations
+- Network issues (cluster)
+
+**Solutions:**
+```{r}
+# Reduce number of workers
+plan(multisession, workers = 4)  # Instead of 16
+
+# Check Monolix can run
+lixoftConnectors::initializeLixoftConnectors(force = TRUE)
+
+# Monitor memory
+pryr::mem_used()  # Current memory usage
+```
+
+### Issue: Slow performance despite parallelization
+
+**Check:**
+- Are models actually running in parallel?
+- Is I/O a bottleneck? (e.g., slow network file system)
+- Are workers waiting for licenses?
+
+```{r}
+# Test parallel backend
+library(future)
+plan(multisession, workers = 4)
+
+test <- future.apply::future_lapply(1:4, function(x) {
+  Sys.sleep(2)
+  return(x)
+})  # Should take ~2 seconds, not 8
+```
+
+### Issue: Cluster jobs fail
+
+**Check logs:**
+```{r}
+# View most recent log
+log_files <- list.files(".batchtools.logs",
+                       recursive = TRUE,
+                       full.names = TRUE)
+latest_log <- log_files[which.max(file.mtime(log_files))]
+cat(readLines(latest_log), sep = "\n")
+```
+
+**Common issues:**
+- Insufficient walltime: Increase `walltime`
+- Insufficient memory: Increase `memory`
+- Module not loaded: Add `module load` commands to template
+- Path issues: Use absolute paths for project files
+
+## Performance Benchmarks
+
+Example timings for an exhaustive search with 200 models (2 minutes each):
+
+| Configuration | Time | Speedup |
+|--------------|------|---------|
+| Sequential | 400 min | 1x |
+| 4 cores (local) | 100 min | 4x |
+| 10 cores (local) | 40 min | 10x |
+| 50 workers (cluster) | 8 min | 50x |
+
+**Note**: Actual speedup depends on:
+- Model complexity
+- Dataset size
+- I/O performance
+- Available resources
+
+## Complete Working Example
+
+Here's a complete script for parallel exhaustive search:
+
+```{r}
+#!/usr/bin/env Rscript
+
+# parallel_search.R - Run mlxModelFinder in parallel
+
+# Load libraries
+library(mlxModelFinder)
+library(future)
+library(future.apply)
+library(progressr)
+
+# Configure parallel execution
+# Choose one:
+
+# Option 1: Local (8 cores)
+plan(multisession, workers = 8)
+
+# Option 2: Slurm cluster (50 workers)
+# library(future.batchtools)
+# plan(batchtools_slurm,
+#      workers = 50,
+#      resources = list(
+#        walltime = "02:00:00",
+#        memory = "4GB",
+#        ncpus = 1,
+#        partition = "compute"
+#      ))
+
+# Enable progress tracking
+handlers(global = TRUE)
+handlers("progress")
+
+# Run model search
+with_progress({
+  result <- findModel(
+    project = "data/my_project.mlxtran",
+    library = "pk",
+    requiredFilters = list(
+      administration = "oral",
+      parametrization = "clearance"
+    ),
+    filters = list(
+      absorption = c("zeroOrder", "firstOrder", "sigmoid"),
+      distribution = c("1compartment", "2compartments", "3compartments"),
+      elimination = c("linear", "MichaelisMenten")
+    ),
+    algorithm = "exhaustive_search",
+    settings = list(
+      iiv = TRUE,
+      error = TRUE,
+      plot = FALSE,
+      seed = 123456,
+      output = "results/exhaustive_search_results.csv",
+      save_mode = "best"
+    )
+  )
+})
+
+# Reset to sequential
+plan(sequential)
+
+# Print summary
+cat("\n=== Best Model ===\n")
+print(result$best_model)
+
+cat("\n=== Summary Statistics ===\n")
+cat("Total models tested:", nrow(result$results), "\n")
+cat("Best metric:", min(result$results$metric), "\n")
+cat("Worst metric:", max(result$results$metric), "\n")
+
+# Save final results
+saveRDS(result, "results/final_result.rds")
+
+cat("\nDone! Results saved to results/\n")
+```
+
+Run this script with:
+
+```{bash}
+# Local
+Rscript parallel_search.R
+
+# Or submit to cluster
+sbatch --wrap="Rscript parallel_search.R"
+```
+
+## Using with Custom Models
+
+Parallel execution works seamlessly with custom model libraries:
+
+```{r}
+library(future)
+
+# Define custom model function
+my_model_func <- function(library, filters) {
+  model_file <- sprintf("models/%s_%s.txt",
+                       filters$absorption,
+                       filters$distribution)
+  return(normalizePath(model_file))
+}
+
+# Configure parallel
+plan(multisession, workers = 10)
+
+# Run with custom models in parallel
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(
+    absorption = c("firstOrder", "zeroOrder"),
+    distribution = c("1cpt", "2cpt")
+  ),
+  algorithm = "exhaustive_search",
+  model_creation_func = my_model_func,
+  settings = list(
+    iiv = TRUE,
+    error = TRUE,
+    plot = FALSE
+  )
+)
+
+plan(sequential)
+```
+
+## Advanced: Nested Parallelization
+
+For very large searches, you can combine parallel iterations (ACO) with parallel model evaluation:
+
+```{r}
+# NOT RECOMMENDED - can lead to resource contention
+# Only use if you understand your system's capabilities
+
+library(future)
+library(future.callr)
+
+# Outer level: parallel iterations
+plan(list(
+  tweak(multisession, workers = 4),    # 4 parallel iterations
+  tweak(multisession, workers = 5)     # Each with 5 parallel models
+))  # Total: 20 concurrent processes
+
+# This is advanced and often not beneficial
+# Stick to single-level parallelization for most use cases
+```
+
+## Summary
+
+Parallel execution in `mlxModelFinder` is straightforward:
+
+1. **Install**: `future`, `future.apply`, `progressr`
+2. **Configure**: `plan(multisession, workers = N)` for local, or `plan(batchtools_slurm, ...)` for cluster
+3. **Run**: Use `findModel()` as usual with `algorithm = "exhaustive_search"` or `"ACO"`
+4. **Monitor**: Use `progressr` for local, cluster commands for HPC
+5. **Cleanup**: `plan(sequential)` when done
+
+Key settings for parallel execution:
+- `plot = FALSE` (required)
+- `output = "results.csv"` (recommended)
+- `save_mode = "best"` or `"all"` (for saving models)
+
+For questions or issues, please file an issue on the GitHub repository.

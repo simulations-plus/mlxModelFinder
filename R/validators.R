@@ -352,6 +352,20 @@ validate_custom_model_setup <- function(library, algorithm, model_creation_func,
   if (library != "custom" && !is.null(model_creation_func)) {
     warning("'model_creation_func' is ignored when library != 'custom'")
   }
-  
+
+  return(TRUE)
+}
+
+validate_param_distributions <- function(param_distributions) {
+  if (!is.list(param_distributions) || is.null(names(param_distributions))) {
+    stop("'param_distributions' must be a named list, e.g. list(V = \"logNormal\", Cl = \"normal\")")
+  }
+  valid <- c("normal", "logNormal", "logitNormal")
+  invalid <- param_distributions[!param_distributions %in% valid]
+  if (length(invalid) > 0) {
+    stop("Invalid distribution(s): ",
+         paste(names(invalid), "=", paste0("\"", invalid, "\""), collapse = ", "),
+         ". Valid options: ", paste(valid, collapse = ", "))
+  }
   return(TRUE)
 }

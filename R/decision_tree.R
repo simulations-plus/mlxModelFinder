@@ -158,7 +158,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
   } else {
 
-    runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+    runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions)
     metric <- metric_func()
 
     if (!is.null(settings$table_func))
@@ -281,7 +281,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       } else {
 
         model <- getModelName(library, filters = append(struct_model_df, requiredFilters))
-        runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func)
+        runModel(model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions)
 
         metric <- metric_func()
         models_tested <- models_tested + 1
@@ -354,7 +354,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
         iiv_params <- as.data.frame(as.list(params))
         iiv_params[, param] <- FALSE
         runModel(model, iiv = iiv_params, obsIDToUse = settings$obsIDToUse,
-                 linearization = settings$linearization, initial_func = initial_func)
+                 linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions)
 
         metric <- metric_func()
         models_tested <- models_tested + 1
@@ -422,7 +422,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
 
       error_df <- data.frame(error = error)
       runModel(model, error = error_df, obsIDToUse = settings$obsIDToUse,
-               linearization = settings$linearization, initial_func = initial_func)
+               linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions)
 
       metric <- metric_func()
       models_tested <- models_tested + 1

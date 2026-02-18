@@ -62,7 +62,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     # Use custom or standard getModelName
     # For custom libraries, requiredFilters might be NULL
     if (library == "custom" || is.null(requiredFilters) || length(requiredFilters) == 0) {
-      model_filters <- as.list(model_row[, struct_cols])
+      model_filters <- as.list(model_row[, struct_cols, drop = FALSE])
     } else {
       model_filters <- append(model_row[, struct_cols], requiredFilters)
     }
@@ -84,7 +84,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
       if (library == "custom" && !is.null(param_mapping)) {
         # Get parameters for this specific filter combination
         model_params <- getParamListFromMapping(
-          as.list(model_row[, struct_cols]), 
+          model_filters,
           param_mapping
         )
         
@@ -173,7 +173,8 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
              error = job$error_model,
              obsIDToUse = settings$obsIDToUse,
              linearization = settings$linearization,
-             initial_func = initial_func)
+             initial_func = initial_func,
+             param_distributions = settings$param_distributions)
 
     metric <- metric_func()
 
@@ -260,7 +261,8 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
              error = best_error_model,
              obsIDToUse = settings$obsIDToUse,
              linearization = settings$linearization,
-             initial_func = initial_func)
+             initial_func = initial_func,
+             param_distributions = settings$param_distributions)
 
     # And save it
     lixoftConnectors::saveProject(

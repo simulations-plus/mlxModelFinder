@@ -100,6 +100,17 @@
 #'   }
 #'   This structure tells the algorithm which parameters are available for IIV exploration
 #'   in each model variant. See vignette for detailed examples.
+#' @param param_distributions (optional) Named list mapping parameter names to their
+#'   individual distribution type. Applied before each model run via
+#'   `lixoftConnectors::setIndividualParameterDistribution()`. Only parameters
+#'   present in the current model are set (others are silently ignored).
+#'   Valid distribution values:
+#'   \itemize{
+#'     \item \code{"normal"}
+#'     \item \code{"logNormal"}
+#'     \item \code{"logitNormal"}
+#'   }
+#'   Example: \code{param_distributions = list(V = "logNormal", Cl = "logNormal", ka = "logNormal")}
 #'
 #' @return A list that contains:
 #'   \itemize{
@@ -198,7 +209,7 @@
 findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
                       algorithm = NULL, settings = NULL, metric_func = NULL,
                       initial_func = NULL, model_creation_func = NULL,
-                      param_mapping = NULL) {
+                      param_mapping = NULL, param_distributions = NULL) {
 
   op = options()
   op$lixoft_notificationOptions$warnings = 1
@@ -226,6 +237,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
 
   if (!is.null(metric_func))  validate_metric_func_no_args(metric_func)
   if (!is.null(initial_func)) validate_initial_func_one_arg(initial_func)
+  if (!is.null(param_distributions)) validate_param_distributions(param_distributions)
 
   # --- Default Settings ---
   # For custom library, keys are not needed (no default filters)
@@ -291,6 +303,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
     default_settings[names(settings)] <- settings
   }
   settings <- default_settings
+  settings$param_distributions <- param_distributions
 
   # --- Do not plot diagrams / progress if packages not installed ---
   if (isTRUE(settings$plot) && identical(algorithm, "decision_tree")) {
