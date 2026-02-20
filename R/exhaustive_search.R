@@ -126,6 +126,14 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
       iiv_combos <- as.data.frame(as.list(
         lixoftConnectors::getIndividualParameterModel()$variability$id
       ))
+      # Apply fixed_iiv even when not searching IIV
+      if (!is.null(settings$fixed_iiv)) {
+        for (p in names(settings$fixed_iiv)) {
+          if (p %in% names(iiv_combos)) {
+            iiv_combos[[p]] <- settings$fixed_iiv[[p]]
+          }
+        }
+      }
     }
 
     # Add each IIV combination as a separate job
