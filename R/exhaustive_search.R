@@ -270,6 +270,13 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     } else {
       lixoftConnectors::setStructuralModel(best_model_name)
       best_iiv_model <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability$id))
+      if (!is.null(settings$fixed_iiv)) {
+        for (p in names(settings$fixed_iiv)) {
+          if (p %in% names(best_iiv_model)) {
+            best_iiv_model[[p]] <- settings$fixed_iiv[[p]]
+          }
+        }
+      }
     }
 
     # Run it one last time
