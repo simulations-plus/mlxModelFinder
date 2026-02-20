@@ -14,7 +14,9 @@ findModel(
   metric_func = NULL,
   initial_func = NULL,
   model_creation_func = NULL,
-  param_mapping = NULL
+  param_mapping = NULL,
+  param_distributions = NULL,
+  fixed_iiv = NULL
 )
 }
 \arguments{
@@ -116,6 +118,27 @@ Required when \code{library = "custom"} and \code{settings$iiv = TRUE}. Must be 
 }
 This structure tells the algorithm which parameters are available for IIV exploration
 in each model variant. See vignette for detailed examples.}
+
+\item{param_distributions}{(optional) Named list mapping parameter names to their
+individual distribution type. Applied before each model run via
+\code{lixoftConnectors::setIndividualParameterDistribution()}. Only parameters
+present in the current model are set (others are silently ignored).
+Valid distribution values:
+\itemize{
+\item \code{"normal"}
+\item \code{"logNormal"}
+\item \code{"logitNormal"}
+}
+Example: \code{param_distributions = list(V = "logNormal", Cl = "logNormal", ka = "logNormal")}}
+
+\item{fixed_iiv}{(optional) Named logical list that locks IIV on specific parameters.
+Parameters set to \code{TRUE} always have IIV (never removed by the search).
+Parameters set to \code{FALSE} never have IIV (never added by the search).
+Parameters not listed are explored freely by the algorithm.
+When \code{settings$iiv = TRUE}, constrains which parameters the search algorithm
+explores. When \code{settings$iiv = FALSE}, sets the fixed IIV state for all runs.
+Parameters not present in the current model are silently ignored.
+Example: \code{fixed_iiv = list(Cl = TRUE, V = TRUE, ka = FALSE)}}
 }
 \value{
 A list that contains:

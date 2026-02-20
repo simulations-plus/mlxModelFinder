@@ -324,6 +324,62 @@ safe_model_func <- function(library, filters) {
 }
 ```
 
+## Controlling Parameter Distributions
+
+By default, Monolix assigns a log-normal distribution to each individual parameter. Use `param_distributions` to override this for specific parameters:
+
+```{r}
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(absorption = c("firstOrder", "zeroOrder")),
+  algorithm = "exhaustive_search",
+  model_creation_func = my_model_func,
+  param_mapping = my_param_mapping,
+  param_distributions = list(V = "logNormal", Cl = "normal", ka = "logNormal"),
+  settings = list(iiv = TRUE)
+)
+```
+
+Valid distribution values are `"normal"`, `"logNormal"`, and `"logitNormal"`. Parameters not in the list keep their Monolix defaults. Parameters not present in a given model variant are silently ignored.
+
+This also works with the PK library:
+
+```{r}
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "pk",
+  requiredFilters = list(administration = "oral", parametrization = "clearance"),
+  algorithm = "decision_tree",
+  param_distributions = list(V = "normal", Cl = "normal")
+)
+```
+
+## Fixing IIV on Specific Parameters
+
+When exploring IIV (`settings$iiv = TRUE`), you can lock certain parameters to always have or never have IIV using `fixed_iiv`:
+
+```{r}
+result <- findModel(
+  project = "my_project.mlxtran",
+  library = "custom",
+  filters = list(absorption = c("firstOrder", "zeroOrder")),
+  algorithm = "exhaustive_search",
+  model_creation_func = my_model_func,
+  param_mapping = my_param_mapping,
+  fixed_iiv = list(Cl = TRUE, V = TRUE, ka = FALSE),
+  settings = list(iiv = TRUE)
+)
+```
+
+- `TRUE` — parameter always has IIV (never removed by the search)
+- `FALSE` — parameter never has IIV (never added by the search)
+- Parameters not listed are explored freely by the algorithm
+
+This reduces the search space: with 5 parameters and 2 fixed, only 2^3 = 8 IIV combinations are tested instead of 2^5 = 32. It works with all algorithms (exhaustive search, ACO, decision tree).
+
+`fixed_iiv` also works when `settings$iiv = FALSE` — in that case it simply sets the initial variability state for all runs without any search. For example, `fixed_iiv = list(ka = FALSE)` with `iiv = FALSE` will run all models without IIV on `ka`.
+
 ## Limitations
 
 - Custom models are **not compatible** with `algorithm = "decision_tree"`

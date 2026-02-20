@@ -115,8 +115,9 @@
 #'   Parameters set to \code{TRUE} always have IIV (never removed by the search).
 #'   Parameters set to \code{FALSE} never have IIV (never added by the search).
 #'   Parameters not listed are explored freely by the algorithm.
-#'   Only used when \code{settings$iiv = TRUE}. Parameters not present in the
-#'   current model are silently ignored.
+#'   When \code{settings$iiv = TRUE}, constrains which parameters the search algorithm
+#'   explores. When \code{settings$iiv = FALSE}, sets the fixed IIV state for all runs.
+#'   Parameters not present in the current model are silently ignored.
 #'   Example: \code{fixed_iiv = list(Cl = TRUE, V = TRUE, ka = FALSE)}
 #'
 #' @return A list that contains:
@@ -293,7 +294,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   # --- Setup ---
   set.seed(settings$seed)
   filters <- updateFilters(library, filters, requiredFilters)
-  space <- calculateSearchSpace(library, filters, settings$error, settings$iiv, param_mapping)
+  space <- calculateSearchSpace(library, filters, settings$error, settings$iiv, param_mapping, fixed_iiv, requiredFilters)
   cli::cli_alert_info("Search space size: {space} models")
 
   # --- Algorithm Selection ---

@@ -164,7 +164,7 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   )
 }
 
-calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, param_mapping = NULL) {
+calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, param_mapping = NULL, fixed_iiv = NULL, requiredFilters = NULL) {
   if (library == "pk") {
     absorption_delays <- max(sum(filters$absorption != "transitCompartments"), 1) * length(filters$delay)
     direct_abs <- sum(filters$absorption == "transitCompartments")
@@ -223,7 +223,18 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, p
 
       all_models$total_params <- rowSums(as.data.frame(param_values), na.rm = TRUE)
 
-      space <- sum(2^all_models$total_params)
+      if (!is.null(fixed_iiv) && !is.null(requiredFilters)) {
+        # Count free params per model using actual parameter names
+        space <- 0
+        for (i in 1:nrow(all_models)) {
+          model_filters <- as.list(all_models[i, , drop = FALSE])
+          params <- get_pk_parameters(model_filters, requiredFilters)
+          n_free <- length(setdiff(params, names(fixed_iiv)))
+          space <- space + 2^n_free
+        }
+      } else {
+        space <- sum(2^all_models$total_params)
+      }
     } else if (library == "custom") {
       # For custom libraries, use param_mapping if available
       if (!is.null(param_mapping)) {
@@ -238,10 +249,11 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, p
           
           # Get parameters for this model variant
           params <- getParamListFromMapping(model_filters, param_mapping)
-          n_params <- length(params)
-          
-          # Each parameter can have IIV on or off: 2^n_params combinations
-          total_iiv_space <- total_iiv_space + 2^n_params
+          free_params <- if (!is.null(fixed_iiv)) setdiff(params, names(fixed_iiv)) else params
+          n_free <- length(free_params)
+
+          # Each free parameter can have IIV on or off: 2^n_free combinations
+          total_iiv_space <- total_iiv_space + 2^n_free
         }
         
         space <- total_iiv_space

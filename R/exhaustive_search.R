@@ -149,7 +149,8 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
         model_name = model_name,
         iiv_model = iiv_model,
         error_model = error_model,
-        model_info_base = model_info_base # This has all info for the final table
+        model_info_base = model_info_base, # This has all info for the final table
+        job_index = length(job_list) + 1
       )
 
       job_list[[length(job_list) + 1]] <- job
@@ -177,6 +178,14 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
              param_distributions = settings$param_distributions)
 
     metric <- metric_func()
+
+    # Save project if save_mode == "all"
+    if (identical(settings$save_mode, "all")) {
+      lixoftConnectors::saveProject(
+        file.path(settings$result_folder, "autoBuild",
+                  paste0("run_", job$job_index, ".mlxtran"))
+      )
+    }
 
     # Populate the result row
     model_info <- job$model_info_base
@@ -231,7 +240,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
   }
 
   # --- Save the "best" model project file (re-run once) ---
-  if (settings$save_mode == "best" && nrow(best_model_df) > 0) {
+  if (settings$save_mode %in% c("best", "all") && nrow(best_model_df) > 0) {
     cli::cli_alert_info("Re-running best model to save project file...")
 
     # Re-build the components for the best model

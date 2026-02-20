@@ -27,8 +27,8 @@
     Code
       findModel(project = proj_path, library = "pk")
     Condition
-      Error in `findModel()`:
-      ! argument "requiredFilters" is missing, with no default
+      Error:
+      ! Error: 'requiredFilters' must be a list with headers 'administration' and 'parametrization'.
 
 # errors on unsupported library
 
@@ -37,7 +37,7 @@
         administration = "oral", parametrization = "clearance"))
     Condition
       Error:
-      ! Error: 'library' must be 'pk'.
+      ! Error: 'library' must be 'pk' or 'custom'.
 
 # requiredFilters must include administration + parametrization with valid values
 
