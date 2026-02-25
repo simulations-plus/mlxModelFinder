@@ -361,11 +361,41 @@ validate_param_distributions <- function(param_distributions) {
     stop("'param_distributions' must be a named list, e.g. list(V = \"logNormal\", Cl = \"normal\")")
   }
   valid <- c("normal", "logNormal", "logitNormal")
-  invalid <- param_distributions[!param_distributions %in% valid]
-  if (length(invalid) > 0) {
-    stop("Invalid distribution(s): ",
-         paste(names(invalid), "=", paste0("\"", invalid, "\""), collapse = ", "),
-         ". Valid options: ", paste(valid, collapse = ", "))
+
+  for (pname in names(param_distributions)) {
+    entry <- param_distributions[[pname]]
+
+    if (is.character(entry) && length(entry) == 1) {
+      # Simple string format: "logNormal"
+      if (!entry %in% valid) {
+        stop("Invalid distribution for '", pname, "': \"", entry,
+             "\". Valid options: ", paste(valid, collapse = ", "))
+      }
+    } else if (is.list(entry)) {
+      # List format: list(distribution = "logitNormal", limits = c(0, 1))
+      if (is.null(entry$distribution)) {
+        stop("'param_distributions$", pname,
+             "' is a list but missing 'distribution' element")
+      }
+      if (!entry$distribution %in% valid) {
+        stop("Invalid distribution for '", pname, "': \"", entry$distribution,
+             "\". Valid options: ", paste(valid, collapse = ", "))
+      }
+      if (!is.null(entry$limits)) {
+        if (!is.numeric(entry$limits) || length(entry$limits) != 2) {
+          stop("'param_distributions$", pname,
+               "$limits' must be a numeric vector of length 2, e.g. c(0, 1)")
+        }
+        if (entry$limits[1] >= entry$limits[2]) {
+          stop("'param_distributions$", pname,
+               "$limits': min (", entry$limits[1],
+               ") must be less than max (", entry$limits[2], ")")
+        }
+      }
+    } else {
+      stop("Each entry in 'param_distributions' must be a distribution string ",
+           "(e.g. \"logNormal\") or a list with 'distribution' and optional 'limits'")
+    }
   }
   return(TRUE)
 }

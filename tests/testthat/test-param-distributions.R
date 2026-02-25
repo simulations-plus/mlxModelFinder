@@ -39,6 +39,66 @@ test_that("validate_param_distributions accepts all valid values", {
   ))
 })
 
+# --- Validation tests for list format with limits ---
+
+test_that("validate_param_distributions accepts list format with limits", {
+  expect_true(validate_param_distributions(
+    list(ka = list(distribution = "logitNormal", limits = c(0, 1)))
+  ))
+  # Mixed: string and list entries
+  expect_true(validate_param_distributions(
+    list(V = "logNormal", ka = list(distribution = "logitNormal", limits = c(0, 5)))
+  ))
+  # List format without limits (just distribution)
+  expect_true(validate_param_distributions(
+    list(V = list(distribution = "logNormal"))
+  ))
+})
+
+test_that("validate_param_distributions rejects list format missing distribution", {
+  expect_error(
+    validate_param_distributions(list(ka = list(limits = c(0, 1)))),
+    "missing 'distribution'"
+  )
+})
+
+test_that("validate_param_distributions rejects invalid distribution in list format", {
+  expect_error(
+    validate_param_distributions(list(ka = list(distribution = "foo", limits = c(0, 1)))),
+    "Invalid distribution"
+  )
+})
+
+test_that("validate_param_distributions rejects invalid limits", {
+  # Non-numeric
+  expect_error(
+    validate_param_distributions(list(ka = list(distribution = "logitNormal", limits = c("a", "b")))),
+    "numeric vector of length 2"
+  )
+  # Wrong length
+  expect_error(
+    validate_param_distributions(list(ka = list(distribution = "logitNormal", limits = c(0)))),
+    "numeric vector of length 2"
+  )
+  # min >= max
+  expect_error(
+    validate_param_distributions(list(ka = list(distribution = "logitNormal", limits = c(1, 0)))),
+    "min.*must be less than max"
+  )
+  # Equal values
+  expect_error(
+    validate_param_distributions(list(ka = list(distribution = "logitNormal", limits = c(1, 1)))),
+    "min.*must be less than max"
+  )
+})
+
+test_that("validate_param_distributions rejects invalid entry types", {
+  expect_error(
+    validate_param_distributions(list(V = 42)),
+    "must be a distribution string"
+  )
+})
+
 # --- Integration tests (require Monolix) ---
 
 test_that("param_distributions works with exhaustive search", {
@@ -157,6 +217,41 @@ test_that("findModel works without param_distributions (NULL default)", {
 
   expect_type(result, "list")
   expect_true(nrow(result$results) > 0)
+})
+
+test_that("param_distributions with logitNormal limits sets limits correctly", {
+  skip_if_no_monolix()
+
+  custom_func <- create_simple_custom_func()
+
+  result <- findModel(
+    project = demo_proj,
+    library = "custom",
+    filters = list(absorption = "firstOrder"),
+    algorithm = "exhaustive_search",
+    model_creation_func = custom_func,
+    param_distributions = list(
+      V = "logNormal",
+      ka = list(distribution = "logitNormal", limits = c(0, 10))
+    ),
+    settings = list(
+      iiv = FALSE,
+      error = FALSE,
+      plot = FALSE,
+      save_mode = "none"
+    )
+  )
+
+  expect_type(result, "list")
+  expect_true(nrow(result$results) > 0)
+
+  # Verify distributions
+  model_info <- lixoftConnectors::getIndividualParameterModel()
+  expect_equal(unname(model_info$distribution["V"]), "logNormal")
+  expect_equal(unname(model_info$distribution["ka"]), "logitNormal")
+
+  # Verify logit limits were set
+  expect_equal(model_info$limits$ka, c(0, 10))
 })
 
 test_that("param_distributions works with pk library and decision tree", {

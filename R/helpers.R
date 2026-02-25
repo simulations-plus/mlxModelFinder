@@ -117,14 +117,32 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
       names(iiv) <- ifelse(names(iiv) == "Q2", "Q", names(iiv))
     }
     iiv <- unlist(iiv[, !is.na(iiv[1, ])])
+    iiv <- iiv[names(iiv) %in% param_names]
     lixoftConnectors::setIndividualParameterModel(list(variability = list(id = iiv)))
   }
 
   if (!is.null(param_distributions)) {
     current_params <- lixoftConnectors::getIndividualParameterModel()$name
-    dists_to_set <- param_distributions[names(param_distributions) %in% current_params]
-    if (length(dists_to_set) > 0) {
+    relevant <- param_distributions[names(param_distributions) %in% current_params]
+    if (length(relevant) > 0) {
+      # Normalize: extract distribution strings and logit limits
+      dists_to_set <- list()
+      logit_limits <- list()
+      for (pname in names(relevant)) {
+        entry <- relevant[[pname]]
+        if (is.list(entry)) {
+          dists_to_set[[pname]] <- entry$distribution
+          if (!is.null(entry$limits)) {
+            logit_limits[[pname]] <- entry$limits
+          }
+        } else {
+          dists_to_set[[pname]] <- entry
+        }
+      }
       do.call(lixoftConnectors::setIndividualParameterDistribution, dists_to_set)
+      if (length(logit_limits) > 0) {
+        do.call(lixoftConnectors::setIndividualLogitLimits, logit_limits)
+      }
     }
   }
 

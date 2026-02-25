@@ -104,13 +104,25 @@
 #'   individual distribution type. Applied before each model run via
 #'   `lixoftConnectors::setIndividualParameterDistribution()`. Only parameters
 #'   present in the current model are set (others are silently ignored).
-#'   Valid distribution values:
+#'   Each entry can be either:
 #'   \itemize{
-#'     \item \code{"normal"}
-#'     \item \code{"logNormal"}
-#'     \item \code{"logitNormal"}
+#'     \item A string: \code{"normal"}, \code{"logNormal"}, or \code{"logitNormal"}
+#'     \item A list with \code{distribution} and optional \code{limits} (for logitNormal):
+#'       \code{list(distribution = "logitNormal", limits = c(min, max))}
 #'   }
-#'   Example: \code{param_distributions = list(V = "logNormal", Cl = "logNormal", ka = "logNormal")}
+#'   When \code{limits} are provided, they are applied via
+#'   \code{lixoftConnectors::setIndividualLogitLimits()}.
+#'   Examples:
+#'   \preformatted{
+#'   # Simple distributions
+#'   param_distributions = list(V = "logNormal", Cl = "normal")
+#'
+#'   # logitNormal with limits
+#'   param_distributions = list(
+#'     V = "logNormal",
+#'     ka = list(distribution = "logitNormal", limits = c(0, 1))
+#'   )
+#'   }
 #' @param fixed_iiv (optional) Named logical list that locks IIV on specific parameters.
 #'   Parameters set to \code{TRUE} always have IIV (never removed by the search).
 #'   Parameters set to \code{FALSE} never have IIV (never added by the search).

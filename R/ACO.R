@@ -197,14 +197,15 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     if (length(models_to_run_list) > 0) {
       cli::cli_alert_info("Running {length(models_to_run_list)} new models...")
 
-      parallel_results <- future.apply::future_lapply(
+      parallel_results <- suppressWarnings(future.apply::future_lapply(
         models_to_run_list,
         function(row) {
           res <- run_single_model_parallel(row, project)
           return(res)
         },
-        future.seed = TRUE
-      )
+        future.seed = TRUE,
+        future.packages = c("lixoftConnectors", "stats")
+      ))
       cli::cli_alert_success("Execution complete.")
 
       # 4. COMBINE: Integrate parallel results back into the main state
@@ -281,14 +282,15 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       # 2. APPLY (XGBoost)
       if (length(xgb_models_to_run) > 0) {
         cli::cli_alert_info("Running {length(xgb_models_to_run)} new XGBoost models in parallel...")
-        xgb_parallel_results <- future.apply::future_lapply(
+        xgb_parallel_results <- suppressWarnings(future.apply::future_lapply(
           xgb_models_to_run,
           function(row) {
             res <- run_single_model_parallel(row, project)
             return(res)
           },
-          future.seed = TRUE
-        )
+          future.seed = TRUE,
+          future.packages = c("lixoftConnectors", "stats")
+        ))
 
         # 3. COMBINE (XGBoost)
         for (model_hash in names(xgb_parallel_results)) {

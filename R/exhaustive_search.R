@@ -215,15 +215,16 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
   p <- progressr::progressor(steps = length(job_list))
 
-  all_results_list <- future.apply::future_lapply(
+  all_results_list <- suppressWarnings(future.apply::future_lapply(
     job_list,
     function(job) {
       res <- run_exhaustive_worker(job, project)
       p() # Update progress
       return(res)
     },
-    future.seed = TRUE
-  )
+    future.seed = TRUE,
+    future.packages = c("lixoftConnectors", "stats")
+  ))
 
   cli::cli_alert_success("All models complete.")
 

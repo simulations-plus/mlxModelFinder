@@ -15,7 +15,9 @@ RoxygenNote: 7.3.2
 Depends: R (>= 4.2.0)
 Imports:
     lixoftConnectors,
-	cli
+	cli,
+	stats,
+	utils
 Suggests:
     htmltools,
     plotly,
