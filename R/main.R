@@ -123,6 +123,18 @@
 #'     ka = list(distribution = "logitNormal", limits = c(0, 1))
 #'   )
 #'   }
+#' @param obs_mapping (optional) **Observation mapping** for custom models. A list of lists,
+#'   where each entry defines a mapping passed directly to
+#'   `lixoftConnectors::setMapping()`. Each entry must contain:
+#'   \itemize{
+#'     \item \strong{obsId}: Character; the observation column name in the dataset
+#'     \item \strong{modelOutput}: Character; the model output variable to map to
+#'     \item \strong{observationName} (optional): Character; display name for the observation
+#'   }
+#'   Only used when `library = "custom"`. When provided, `obsIDToUse` is ignored
+#'   for custom models. PK models (`library = "pk"`) should continue using
+#'   `settings$obsIDToUse` instead.
+#'   Example: \code{obs_mapping = list(list(obsId = "concentration", modelOutput = "Cc"))}
 #' @param fixed_iiv (optional) Named logical list that locks IIV on specific parameters.
 #'   Parameters set to \code{TRUE} always have IIV (never removed by the search).
 #'   Parameters set to \code{FALSE} never have IIV (never added by the search).
@@ -216,6 +228,17 @@
 #'   filters = list(absorption = c("firstOrder", "zeroOrder")),
 #'   algorithm = "exhaustive_search",
 #'   model_creation_func = my_custom_func,
+#'   settings = list(iiv = FALSE, error = FALSE)
+#' )
+#'
+#' # Example 7: Custom model with obs_mapping for non-standard observation mapping
+#' res <- findModel(
+#'   project = "my_project.mlxtran",
+#'   library = "custom",
+#'   filters = list(absorption = c("firstOrder", "zeroOrder")),
+#'   algorithm = "exhaustive_search",
+#'   model_creation_func = my_custom_func,
+#'   obs_mapping = list(list(obsId = "concentration", modelOutput = "Cc")),
 #'   settings = list(iiv = FALSE, error = FALSE)
 #' )
 #' }
