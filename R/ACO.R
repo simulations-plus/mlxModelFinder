@@ -118,11 +118,12 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       }
     }
 
-    # Override fixed IIV parameters
+    # Override fixed IIV parameters (only for models where the param exists, i.e. not NA)
     if (settings$iiv && !is.null(settings$fixed_iiv) && !is.null(models$iiv)) {
       for (p in names(settings$fixed_iiv)) {
         if (p %in% colnames(models$iiv)) {
-          models$iiv[, p] <- settings$fixed_iiv[[p]]
+          non_na <- !is.na(models$iiv[, p])
+          models$iiv[non_na, p] <- settings$fixed_iiv[[p]]
         }
       }
     }
@@ -250,7 +251,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
         list_of_runs = list_of_runs_df,
         probas_struct = probas_struct, probas_iiv = probas_iiv, probas_error = probas_error,
         N = settings$xgboost_model_nb, requiredFilters = requiredFilters,
-        library = library, param_mapping = param_mapping
+        library = library, param_mapping = param_mapping,
+        fixed_iiv = settings$fixed_iiv
       )
 
       xgb_runs$pred_score <- NULL

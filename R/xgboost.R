@@ -3,19 +3,22 @@ make_applicable <- function(struct_features, param_df, param_cols, requiredFilte
   params_out <- as.data.frame(param_df)
 
   if (library == "custom" && !is.null(param_mapping)) {
-    # For custom libraries, use param_mapping to determine valid parameters
-    # For each row (model), determine which parameters are applicable
-    for (i in 1:nrow(struct_features)) {
-      # Get the structural features for this model
-      model_filters <- as.list(struct_features[i, , drop = FALSE])
-      
-      # Get valid parameters for this model variant
+    # Vectorized: precompute validity per unique structural combination
+    struct_keys <- do.call(paste, c(as.list(struct_features), sep = "|"))
+    unique_keys <- unique(struct_keys)
+
+    invalid_map <- list()
+    for (uk in unique_keys) {
+      first_idx <- which(struct_keys == uk)[1L]
+      model_filters <- as.list(struct_features[first_idx, , drop = FALSE])
       valid_params <- getParamListFromMapping(model_filters, param_mapping)
-      
-      # Set NA for parameters not in valid_params
-      invalid_params <- setdiff(param_cols, valid_params)
-      if (length(invalid_params) > 0) {
-        params_out[i, invalid_params] <- NA
+      invalid_map[[uk]] <- setdiff(param_cols, valid_params)
+    }
+
+    for (uk in unique_keys) {
+      inv_cols <- invalid_map[[uk]]
+      if (length(inv_cols) > 0) {
+        params_out[which(struct_keys == uk), inv_cols] <- NA
       }
     }
   } else if (library == "pk") {
@@ -96,13 +99,18 @@ make_applicable <- function(struct_features, param_df, param_cols, requiredFilte
 
 
 build_per_column_grid <- function(choices_list, max_combos, n_cols) {
-  # expand.grid creates a data frame from all combinations of the supplied vectors
-  full_grid <- expand.grid(choices_list, stringsAsFactors = FALSE)
+  lengths <- sapply(choices_list, length)
+  total_possible <- prod(as.double(lengths))
 
-  if (is.finite(max_combos) && nrow(full_grid) > max_combos) {
-    # If the grid is too large, take a random sample
-    sampled_indices <- sample.int(nrow(full_grid), size = max_combos)
-    full_grid <- full_grid[sampled_indices, , drop = FALSE]
+  if (is.finite(max_combos) && total_possible > max_combos) {
+    # Sample directly instead of expanding the full grid
+    n_sample <- as.integer(max_combos)
+    cols <- lapply(choices_list, function(vals) {
+      vals[sample.int(length(vals), n_sample, replace = TRUE)]
+    })
+    full_grid <- as.data.frame(cols, stringsAsFactors = FALSE)
+  } else {
+    full_grid <- expand.grid(choices_list, stringsAsFactors = FALSE)
   }
   return(full_grid)
 }
@@ -183,7 +191,8 @@ train_xgb_and_propose <- function(
     requiredFilters = list(),
     modelsToTest = NULL,
     library = "pk",
-    param_mapping = NULL
+    param_mapping = NULL,
+    fixed_iiv = NULL
 ) {
 
   # --- 1. SETUP ---
@@ -253,14 +262,24 @@ train_xgb_and_propose <- function(
     
     error_candidates <- build_candidates(probas_error, list_of_runs, error_col, Inf)
 
-    indices <- expand.grid(
-      struct = seq_len(nrow(struct_candidates)),
-      iiv = seq_len(nrow(iiv_candidates)),
-      error = seq_len(nrow(error_candidates))
-    )
+    n_struct <- nrow(struct_candidates)
+    n_iiv    <- nrow(iiv_candidates)
+    n_error  <- nrow(error_candidates)
+    total_possible <- as.double(n_struct) * as.double(n_iiv) * as.double(n_error)
 
-    if (is.finite(max_total_combos) && nrow(indices) > max_total_combos) {
-      indices <- indices[sample.int(nrow(indices), max_total_combos), ]
+    if (is.finite(max_total_combos) && total_possible > max_total_combos) {
+      n_sample <- as.integer(max_total_combos)
+      indices <- data.frame(
+        struct = sample.int(n_struct, n_sample, replace = TRUE),
+        iiv    = sample.int(n_iiv, n_sample, replace = TRUE),
+        error  = sample.int(n_error, n_sample, replace = TRUE)
+      )
+    } else {
+      indices <- expand.grid(
+        struct = seq_len(n_struct),
+        iiv    = seq_len(n_iiv),
+        error  = seq_len(n_error)
+      )
     }
 
     struct_part <- struct_candidates[indices$struct, , drop = FALSE]
@@ -275,6 +294,16 @@ train_xgb_and_propose <- function(
       library = library,
       param_mapping = param_mapping
     )
+
+    # Apply fixed_iiv constraints (only where param exists, i.e. not NA)
+    if (!is.null(fixed_iiv) && ncol(fixed_iivs_df) > 0) {
+      for (p in names(fixed_iiv)) {
+        if (p %in% names(fixed_iivs_df)) {
+          non_na <- !is.na(fixed_iivs_df[[p]])
+          fixed_iivs_df[non_na, p] <- fixed_iiv[[p]]
+        }
+      }
+    }
 
     candidates <- cbind(struct_part, error_part, fixed_iivs_df)
 
@@ -297,6 +326,16 @@ train_xgb_and_propose <- function(
       param_mapping = param_mapping
     )
 
+    # Apply fixed_iiv constraints (only where param exists, i.e. not NA)
+    if (!is.null(fixed_iiv) && ncol(fixed_iivs_df) > 0) {
+      for (p in names(fixed_iiv)) {
+        if (p %in% names(fixed_iivs_df)) {
+          non_na <- !is.na(fixed_iivs_df[[p]])
+          fixed_iivs_df[non_na, p] <- fixed_iiv[[p]]
+        }
+      }
+    }
+
     candidates <- cbind(struct_part_user, fixed_iivs_df)
   }
 
@@ -306,10 +345,12 @@ train_xgb_and_propose <- function(
   if (nrow(candidates) > 0) {
     # FIX: Create a unique key for each model configuration, ensuring column order is identical
     create_key <- function(df) {
-      apply(df, 1, function(row) {
-        row[is.na(row)] <- "_NA_"
-        paste(row, collapse = "|")
+      df_chr <- lapply(df, function(col) {
+        col <- as.character(col)
+        col[is.na(col)] <- "_NA_"
+        col
       })
+      do.call(paste, c(df_chr, sep = "|"))
     }
 
     # Force both dataframes into the same canonical column order before creating keys
