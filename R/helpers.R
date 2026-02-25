@@ -88,12 +88,14 @@ calculateMetricBICc <- function() {
 
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
                      obsIDToUse = NULL, linearization = FALSE,
-                     param_distributions = NULL) {
+                     param_distributions = NULL, obs_mapping = NULL) {
 
   error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
   lixoftConnectors::setStructuralModel(model)
 
-  if (!is.null(obsIDToUse)) {
+  if (!is.null(obs_mapping)) {
+    lixoftConnectors::setMapping(obs_mapping)
+  } else if (!is.null(obsIDToUse)) {
     model_output <- lixoftConnectors::getMapping()$mapping[[1]]$modelOutput
     lixoftConnectors::setMapping(list(list(obsId = obsIDToUse, modelOutput = model_output)))
     if (obsIDToUse %in% names(error_model))

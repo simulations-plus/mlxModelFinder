@@ -96,19 +96,26 @@ getModelName <- function(library, filters = list(), custom_func = NULL) {
   # If custom function provided, use it directly
   if (!is.null(custom_func)) {
     model_path <- custom_func(library, filters)
-    
+
     # Validate that a path was returned
     if (is.null(model_path) || !is.character(model_path) || length(model_path) != 1) {
-      stop("Error: custom model_creation_func must return a single character string (model path).", 
+      stop("Error: custom model_creation_func must return a single character string (model path).",
            call. = FALSE)
     }
-    
+
     # Validate that the file exists
     if (!file.exists(model_path)) {
-      stop(sprintf("Error: custom model_creation_func returned non-existent path: %s", model_path), 
+      stop(sprintf("Error: custom model_creation_func returned non-existent path: %s", model_path),
            call. = FALSE)
     }
-    
+
+    # Copy to tempdir to avoid polluting the working directory
+    temp_path <- file.path(tempdir(), basename(model_path))
+    if (normalizePath(model_path, mustWork = FALSE) != normalizePath(temp_path, mustWork = FALSE)) {
+      file.copy(model_path, temp_path, overwrite = TRUE)
+      model_path <- temp_path
+    }
+
     return(model_path)
   }
   

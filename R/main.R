@@ -230,7 +230,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
                       algorithm = NULL, settings = NULL, metric_func = NULL,
                       initial_func = NULL, model_creation_func = NULL,
                       param_mapping = NULL, param_distributions = NULL,
-                      fixed_iiv = NULL) {
+                      fixed_iiv = NULL, obs_mapping = NULL) {
 
   op = options()
   op$lixoft_notificationOptions$warnings = 1
@@ -260,6 +260,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   if (!is.null(initial_func)) validate_initial_func_one_arg(initial_func)
   if (!is.null(param_distributions)) validate_param_distributions(param_distributions)
   if (!is.null(fixed_iiv)) validate_fixed_iiv(fixed_iiv)
+  if (!is.null(obs_mapping)) validate_obs_mapping(obs_mapping)
 
   # --- Default Settings ---
   # For custom library, keys are not needed (no default filters)
@@ -327,6 +328,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   settings <- default_settings
   settings$param_distributions <- param_distributions
   settings$fixed_iiv <- fixed_iiv
+  settings$obs_mapping <- obs_mapping
 
   # --- Do not plot diagrams / progress if packages not installed ---
   if (isTRUE(settings$plot) && identical(algorithm, "decision_tree")) {
@@ -351,7 +353,7 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   # Load and clean project
   lixoftConnectors::loadProject(project)
 
-  validate_obsidtouse(settings)
+  validate_obsidtouse(settings, library, obs_mapping)
 
   init_cov <- lixoftConnectors::getIndividualParameterModel()$covariateModel
   init_cov <- lapply(init_cov, function(x) {

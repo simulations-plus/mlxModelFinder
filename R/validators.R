@@ -260,7 +260,10 @@ validate_initial_func_one_arg <- function(func) {
   TRUE
 }
 
-validate_obsidtouse <- function(settings) {
+validate_obsidtouse <- function(settings, library = "pk", obs_mapping = NULL) {
+  # Custom models with obs_mapping don't need obsIDToUse
+  if (library == "custom" && !is.null(obs_mapping)) return(TRUE)
+
   obs_ids <- lixoftConnectors::getData()$observationNames
   if (length(obs_ids) > 1) {
     if (is.null(settings$obsIDToUse)) {
@@ -277,6 +280,32 @@ validate_obsidtouse <- function(settings) {
         settings$obsIDToUse,
         paste(shQuote(obs_ids), collapse = ", ")
       ), call. = FALSE)
+    }
+  }
+
+  return(TRUE)
+}
+
+validate_obs_mapping <- function(obs_mapping) {
+  if (!is.list(obs_mapping) || length(obs_mapping) == 0) {
+    stop("obs_mapping must be a non-empty list of mapping entries.", call. = FALSE)
+  }
+
+  for (i in seq_along(obs_mapping)) {
+    entry <- obs_mapping[[i]]
+    if (!is.list(entry)) {
+      stop(sprintf("obs_mapping[[%d]] must be a list with 'obsId' and 'modelOutput' fields.", i), call. = FALSE)
+    }
+    if (is.null(entry$obsId) || !is.character(entry$obsId) || length(entry$obsId) != 1) {
+      stop(sprintf("obs_mapping[[%d]]$obsId must be a single character string.", i), call. = FALSE)
+    }
+    if (is.null(entry$modelOutput) || !is.character(entry$modelOutput) || length(entry$modelOutput) != 1) {
+      stop(sprintf("obs_mapping[[%d]]$modelOutput must be a single character string.", i), call. = FALSE)
+    }
+    if (!is.null(entry$observationName)) {
+      if (!is.character(entry$observationName) || length(entry$observationName) != 1) {
+        stop(sprintf("obs_mapping[[%d]]$observationName must be a single character string.", i), call. = FALSE)
+      }
     }
   }
 
