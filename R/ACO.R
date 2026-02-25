@@ -144,13 +144,13 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       lixoftConnectors::initializeLixoftConnectors()
       lixoftConnectors::loadProject(project)
       model_struct <- model_df_row[, struct_cols, drop = FALSE]
-      
+
       model_name <- getModelName(
         library,  # Use library parameter
         filters = append(as.list(model_struct), requiredFilters),
         custom_func = model_creation_func  # Pass custom function
       )
-      
+
       iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
       error_model <- if (settings$error) model_df_row[, "error", drop = FALSE] else NULL
       runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions)
@@ -159,9 +159,17 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       result$metric <- metric
       if (!is.null(settings$table_func))
         result <- cbind(result, settings$table_func())
+
+      # Save worker's project to a temp file so main process can load it later
+      worker_project_path <- NULL
+      if (settings$save_mode != "none") {
+        worker_project_path <- tempfile(fileext = ".mlxtran")
+        lixoftConnectors::saveProject(worker_project_path)
+      }
+
       # Read-only check against best_metric
       improved <- metric < best_metric
-      return(list(result = result, improved = improved))
+      return(list(result = result, improved = improved, project_path = worker_project_path))
     }
 
     # 2. SPLIT: Pre-filter models that need to be run
@@ -223,16 +231,27 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
           stagnation_count <- -1
         }
 
-        save_project(
-          mode = settings$save_mode,
-          path_all = file.path(settings$result_folder, "autoBuild"),
-          path_best = file.path(settings$result_folder, "autoBuild"),
-          idx = models_tested,
-          improved = improved
-        )
+        # Load the worker's saved project before saving to the target location
+        if (settings$save_mode != "none" && !is.null(parallel_run$project_path) &&
+            file.exists(parallel_run$project_path)) {
+          lixoftConnectors::loadProject(parallel_run$project_path)
+          save_project(
+            mode = settings$save_mode,
+            path_all = file.path(settings$result_folder, "autoBuild"),
+            path_best = file.path(settings$result_folder, "autoBuild"),
+            idx = models_tested,
+            improved = improved
+          )
+          unlink(parallel_run$project_path, recursive = TRUE)
+        }
 
         list_of_runs[[model_hash]] <- result
         iter_results_list[[model_hash]] <- result
+      }
+
+      # Restore the original project on the main process
+      if (settings$save_mode != "none") {
+        lixoftConnectors::loadProject(project)
       }
     } else {
       cli::cli_alert_info("No new models to run in this iteration (all found in history).")
@@ -305,15 +324,28 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
             best_metric <- result$metric
             stagnation_count <- -1
           }
-          save_project(
-            mode = settings$save_mode,
-            path_all = file.path(settings$result_folder, "autoBuild"),
-            path_best = file.path(settings$result_folder, "autoBuild"),
-            idx = models_tested,
-            improved = improved
-          )
+
+          # Load the worker's saved project before saving to the target location
+          if (settings$save_mode != "none" && !is.null(parallel_run$project_path) &&
+              file.exists(parallel_run$project_path)) {
+            lixoftConnectors::loadProject(parallel_run$project_path)
+            save_project(
+              mode = settings$save_mode,
+              path_all = file.path(settings$result_folder, "autoBuild"),
+              path_best = file.path(settings$result_folder, "autoBuild"),
+              idx = models_tested,
+              improved = improved
+            )
+            unlink(parallel_run$project_path, recursive = TRUE)
+          }
+
           list_of_runs[[model_hash]] <- result
           iter_results_list[[length(iter_results_list) + 1]] <- result
+        }
+
+        # Restore the original project on the main process
+        if (settings$save_mode != "none") {
+          lixoftConnectors::loadProject(project)
         }
       }
 
