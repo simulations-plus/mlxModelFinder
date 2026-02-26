@@ -377,7 +377,13 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   validate_obsidtouse(settings, library, obs_mapping)
 
   # Capture observation names for multi-obs error model support
-  settings$obs_names <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)
+  if (!is.null(obs_mapping)) {
+    # For custom models with obs_mapping, derive from the mapping itself
+    # (project may not yet reflect the multi-obs structure)
+    settings$obs_names <- sapply(obs_mapping, function(x) x$obsId)
+  } else {
+    settings$obs_names <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)
+  }
 
   space <- calculateSearchSpace(library, filters, settings$error, settings$iiv, param_mapping, fixed_iiv, requiredFilters, n_obs = length(settings$obs_names))
   cli::cli_alert_info("Search space size: {space} models")

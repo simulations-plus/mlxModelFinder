@@ -35,6 +35,16 @@ test_that("Search space calculation with error models", {
   
   expect_equal(space_with_error, space_no_error * 4)
   expect_equal(space_with_error, 8)  # 2 structural * 4 error
+
+  # With error and 2 observations (4^2 = 16 error combinations)
+  space_2obs <- mlxModelFinder:::calculateSearchSpace("custom", filters, error = TRUE, iiv = FALSE, n_obs = 2)
+  expect_equal(space_2obs, space_no_error * 16)
+  expect_equal(space_2obs, 32)  # 2 structural * 16 error
+
+  # With error and 3 observations (4^3 = 64 error combinations)
+  space_3obs <- mlxModelFinder:::calculateSearchSpace("custom", filters, error = TRUE, iiv = FALSE, n_obs = 3)
+  expect_equal(space_3obs, space_no_error * 64)
+  expect_equal(space_3obs, 128)  # 2 structural * 64 error
 })
 
 test_that("Search space calculation with IIV and param_mapping", {
