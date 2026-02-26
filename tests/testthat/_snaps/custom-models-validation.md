@@ -3,8 +3,6 @@
     Code
       findModel(project = demo_proj, library = "custom", filters = list(absorption = "firstOrder"),
       algorithm = "exhaustive_search")
-    Message
-      i Search space size: 1 models
     Condition
       Error:
       ! Error: 'model_creation_func' must be provided as a function when library='custom'.
@@ -14,8 +12,6 @@
     Code
       findModel(project = demo_proj, library = "custom", filters = list(absorption = "firstOrder"),
       algorithm = "decision_tree", model_creation_func = valid_custom_func)
-    Message
-      i Search space size: 1 models
     Condition
       Error:
       ! Error: library='custom' is only supported with algorithm='exhaustive_search' or 'ACO'.
@@ -26,8 +22,6 @@
       findModel(project = demo_proj, library = "custom", filters = list(absorption = "firstOrder"),
       algorithm = "exhaustive_search", model_creation_func = valid_custom_func,
       settings = list(iiv = TRUE, plot = FALSE, max_models = 1))
-    Message
-      i Search space size: 8 models
     Condition
       Error:
       ! Error: 'param_mapping' must be provided as a list when library='custom' and settings$iiv=TRUE.
@@ -39,8 +33,6 @@
       algorithm = "exhaustive_search", model_creation_func = valid_custom_func,
       param_mapping = list(common_params = c("V", "Cl")), settings = list(iiv = TRUE,
         plot = FALSE, max_models = 1))
-    Message
-      i Search space size: 4 models
     Condition
       Error:
       ! Error: 'param_mapping' must contain 'filter_params' and 'common_params' elements.
@@ -52,8 +44,6 @@
       algorithm = "exhaustive_search", model_creation_func = valid_custom_func,
       param_mapping = list(filter_params = list()), settings = list(iiv = TRUE, plot = FALSE,
         max_models = 1))
-    Message
-      i Search space size: 1 models
     Condition
       Error:
       ! Error: 'param_mapping' must contain 'filter_params' and 'common_params' elements.
@@ -65,8 +55,6 @@
       algorithm = "exhaustive_search", model_creation_func = valid_custom_func,
       param_mapping = list(common_params = list("V", "Cl"), filter_params = list()),
       settings = list(iiv = TRUE, plot = FALSE, max_models = 1))
-    Message
-      i Search space size: 4 models
     Condition
       Error:
       ! Error: 'param_mapping$common_params' must be a character vector.
@@ -78,8 +66,6 @@
       algorithm = "exhaustive_search", model_creation_func = valid_custom_func,
       param_mapping = list(common_params = c("V", "Cl"), filter_params = c("ka",
         "Tk0")), settings = list(iiv = TRUE, plot = FALSE, max_models = 1))
-    Message
-      i Search space size: 4 models
     Condition
       Error:
       ! Error: 'param_mapping$filter_params' must be a list.
@@ -89,8 +75,6 @@
     Code
       findModel(project = demo_proj, library = "custom", filters = list(absorption = "firstOrder"),
       algorithm = "exhaustive_search", model_creation_func = bad_func_1arg)
-    Message
-      i Search space size: 1 models
     Condition
       Error:
       ! Error: 'model_creation_func' must accept exactly 2 arguments: library and filters.
@@ -100,8 +84,6 @@
     Code
       findModel(project = demo_proj, library = "custom", filters = list(absorption = "firstOrder"),
       algorithm = "exhaustive_search", model_creation_func = bad_func_3args)
-    Message
-      i Search space size: 1 models
     Condition
       Error:
       ! Error: 'model_creation_func' must accept exactly 2 arguments: library and filters.

@@ -198,7 +198,7 @@ train_xgb_and_propose <- function(
   # --- 1. SETUP ---
   struct_cols <- colnames(probas_struct$filters)
   param_cols <- if (!is.null(probas_iiv)) colnames(probas_iiv$filters) else character(0)
-  error_col <- colnames(probas_error$filters)[1]
+  error_col <- colnames(probas_error$filters)
   all_feature_cols <- c(struct_cols, error_col, param_cols)
 
   list_of_runs <- list_of_runs[list_of_runs$metric < 1e16, ]

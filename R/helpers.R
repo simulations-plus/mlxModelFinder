@@ -59,6 +59,17 @@ initializeWeightMatrix <- function(filter_matrix) {
   return(matrix)
 }
 
+get_error_col_names <- function(obs_names) paste0("error_", obs_names)
+
+make_error_probas <- function(obs_names) {
+  error_candidates <- c("constant", "proportional", "combined1", "combined2")
+  error_list <- setNames(
+    rep(list(error_candidates), length(obs_names)),
+    get_error_col_names(obs_names)
+  )
+  probabilities(error_list)
+}
+
 calculateMetric <- function(RSEs, linearization) {
   method <- ifelse(linearization, "linearization", "importanceSampling")
 
@@ -74,8 +85,8 @@ calculateMetric <- function(RSEs, linearization) {
   if (is.null(RSEs)) {
     RSEs <- rep(NaN, length(lixoftConnectors::getIndividualParameterModel()$name))
   }
-  obs_name <- lixoftConnectors::getObservationInformation()$name
-  n_tot <- length(lixoftConnectors::getObservationInformation()[[obs_name]][[obs_name]])
+  obs_info <- lixoftConnectors::getObservationInformation()
+  n_tot <- sum(sapply(obs_info$name, function(nm) length(obs_info[[nm]][[nm]])))
 
   return(BICc + length(RSEs[is.nan(RSEs) | RSEs > 50]) * log(n_tot))
 }
@@ -149,9 +160,16 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   }
 
   if (!is.null(error)) {
-    error <- as.list(error)
-    names(error) <- lixoftConnectors::getObservationInformation()$name[[1]]
-    lixoftConnectors::setErrorModel(error)
+    obs_names <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)
+    error_col_names <- get_error_col_names(obs_names)
+    error_list <- list()
+    for (i in seq_along(obs_names)) {
+      col <- error_col_names[i]
+      if (col %in% names(error)) {
+        error_list[[obs_names[i]]] <- as.character(error[[col]])
+      }
+    }
+    if (length(error_list) > 0) lixoftConnectors::setErrorModel(error_list)
   }
 
   scenario <- lixoftConnectors::getScenario()
@@ -184,7 +202,7 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   )
 }
 
-calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, param_mapping = NULL, fixed_iiv = NULL, requiredFilters = NULL) {
+calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, param_mapping = NULL, fixed_iiv = NULL, requiredFilters = NULL, n_obs = 1) {
   if (library == "pk") {
     absorption_delays <- max(sum(filters$absorption != "transitCompartments"), 1) * length(filters$delay)
     direct_abs <- sum(filters$absorption == "transitCompartments")
@@ -284,7 +302,7 @@ calculateSearchSpace <- function(library, filters, error = FALSE, iiv = FALSE, p
       }
     }
   }
-  if (error) space <- space * 4
+  if (error) space <- space * (4 ^ n_obs)
 
   return(space)
 }

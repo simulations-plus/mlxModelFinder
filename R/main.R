@@ -330,8 +330,6 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   # --- Setup ---
   set.seed(settings$seed)
   filters <- updateFilters(library, filters, requiredFilters)
-  space <- calculateSearchSpace(library, filters, settings$error, settings$iiv, param_mapping, fixed_iiv, requiredFilters)
-  cli::cli_alert_info("Search space size: {space} models")
 
   # --- Algorithm Selection ---
   if (is.null(algorithm)) {
@@ -377,6 +375,12 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
   lixoftConnectors::loadProject(project)
 
   validate_obsidtouse(settings, library, obs_mapping)
+
+  # Capture observation names for multi-obs error model support
+  settings$obs_names <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)
+
+  space <- calculateSearchSpace(library, filters, settings$error, settings$iiv, param_mapping, fixed_iiv, requiredFilters, n_obs = length(settings$obs_names))
+  cli::cli_alert_info("Search space size: {space} models")
 
   init_cov <- lixoftConnectors::getIndividualParameterModel()$covariateModel
   init_cov <- lapply(init_cov, function(x) {
@@ -425,8 +429,16 @@ findModel <- function(project, library, requiredFilters = NULL, filters = NULL,
     lixoftConnectors::setProjectSettings(dataandmodelnexttoproject = TRUE)
   }
 
-  if (!is.null(settings$previous_runs))
+  if (!is.null(settings$previous_runs)) {
     settings$previous_runs <- read.csv(settings$previous_runs)
+    # Migrate old single "error" column to new multi-obs format
+    if ("error" %in% names(settings$previous_runs) && settings$error) {
+      error_col_names <- get_error_col_names(settings$obs_names)
+      if (length(error_col_names) == 1 && !error_col_names[1] %in% names(settings$previous_runs)) {
+        names(settings$previous_runs)[names(settings$previous_runs) == "error"] <- error_col_names[1]
+      }
+    }
+  }
 
   switch(algorithm,
          ACO = {

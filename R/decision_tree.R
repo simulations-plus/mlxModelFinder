@@ -144,8 +144,10 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
   }
 
+  error_col_names <- if (settings$error) get_error_col_names(settings$obs_names) else NULL
+
   if (settings$error) {
-    current_model_df <- transform(current_model_df, error = "combined1")
+    for (ecol in error_col_names) current_model_df[[ecol]] <- "combined1"
   }
 
   model_hash <- create_model_hash(current_model_df)
@@ -251,7 +253,7 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
       }
 
       if (settings$error) {
-        current_model_df <- transform(current_model_df, error = "combined1")
+        for (ecol in error_col_names) current_model_df[[ecol]] <- "combined1"
       }
 
       candidate_string <- textify(candidate)
@@ -405,66 +407,80 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
     cli::cli_alert_success("Done")
   }
 
-  error <- NA
   if (settings$error) {
-    cli::cli_h3("Optimizing error model")
-
     errors <- c("constant", "proportional", "combined1", "combined2")
-    base_error <- error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel[[1]]
-    obs_name <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)[[1]]
+    current_error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
+
+    # Initialize best error per observation
+    best_errors <- setNames(
+      as.character(current_error_model[settings$obs_names]),
+      error_col_names
+    )
 
     if (settings$plot) {
-      child <- Reduce(`[[`, c(list(base), path))$AddChild(base_error)
+      error_label <- paste(best_errors, collapse = "/")
+      child <- Reduce(`[[`, c(list(base), path))$AddChild(error_label)
       child$metric <- base_metric
       child$diff <- 0
-      path <- c(path, base_error)
+      path <- c(path, error_label)
     }
 
-    for (error in errors) {
-      if (error == error_model)
-        next
+    # Optimize each observation's error model sequentially
+    for (obs_idx in seq_along(settings$obs_names)) {
+      obs_name <- settings$obs_names[obs_idx]
+      ecol <- error_col_names[obs_idx]
+      cli::cli_h3("Optimizing error model for observation: {obs_name}")
 
-      error_df <- data.frame(error = error)
-      runModel(model, error = error_df, obsIDToUse = settings$obsIDToUse,
-               linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
+      current_obs_error <- best_errors[[ecol]]
 
-      metric <- metric_func()
-      models_tested <- models_tested + 1
+      for (err_candidate in errors) {
+        if (err_candidate == current_obs_error) next
 
-      candidate_string <- error
+        # Build error df with current best errors, overriding this observation
+        trial_errors <- best_errors
+        trial_errors[[ecol]] <- err_candidate
+        error_df <- as.data.frame(as.list(trial_errors))
 
-      if (settings$plot) {
-        child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(candidate_string)
-        child$metric <- metric
-        child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+        runModel(model, error = error_df, obsIDToUse = settings$obsIDToUse,
+                 linearization = settings$linearization, initial_func = initial_func,
+                 param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
+
+        metric <- metric_func()
+        models_tested <- models_tested + 1
+
+        candidate_string <- paste(trial_errors, collapse = "/")
+
+        if (settings$plot) {
+          child <- Reduce(`[[`, c(list(base), path[-length(path)]))$AddChild(candidate_string)
+          child$metric <- metric
+          child$diff <- metric - Reduce(`[[`, c(list(base), path[-length(path)]))$metric
+        }
+
+        save_project(settings$save_mode,
+                     path_all  = file.path(settings$result_folder, "autoBuild"),
+                     path_best = file.path(settings$result_folder, "autoBuild"),
+                     idx = models_tested,
+                     improved = metric < base_metric)
+
+        if (metric < base_metric) {
+          base_metric <- metric
+          best_errors[[ecol]] <- err_candidate
+          if (settings$plot) path[length(path)] <- candidate_string
+        }
+
+        current_model_df <- base_model_df
+        if (settings$iiv) {
+          iiv_params <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability[[1]]))
+          current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
+        }
+        for (ec in error_col_names) current_model_df[[ec]] <- trial_errors[[ec]]
+        model_hash <- create_model_hash(current_model_df)
+        if (!is.null(settings$table_func))
+          list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), settings$table_func())
+        else
+          list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
       }
-
-      save_project(settings$save_mode,
-                   path_all  = file.path(settings$result_folder, "autoBuild"),
-                   path_best = file.path(settings$result_folder, "autoBuild"),
-                   idx = models_tested,
-                   improved = metric < base_metric)
-
-      if (metric < base_metric) {
-        base_metric <- metric
-        base_error <- error
-        path[length(path)] <- candidate_string
-      }
-
-      current_model_df <- base_model_df
-      if (settings$iiv) {
-        iiv_params <- as.data.frame(as.list(lixoftConnectors::getIndividualParameterModel()$variability[[1]]))
-        current_model_df <- do.call(transform, c(list(current_model_df), iiv_params))
-      }
-      current_model_df <- transform(current_model_df, error = error)
-      model_hash <- create_model_hash(current_model_df)
-      if (!is.null(settings$table_func))
-        list_of_runs[[model_hash]] <- cbind(transform(current_model_df, metric = metric), settings$table_func())
-      else
-        list_of_runs[[model_hash]] <- transform(current_model_df, metric = metric)
     }
-
-    error <- base_error
 
     cli::cli_alert_success("Done")
   }
@@ -487,7 +503,8 @@ runDecisionTree <- function(library, filters, requiredFilters, settings, metric_
   final_results <- rbind_fill(list_of_runs)
   rownames(final_results) <- NULL
   cols <- names(final_results)
-  new_order <- c(setdiff(cols, c("error", "metric")), intersect(cols, c("error", "metric")))
+  trailing_cols <- c(if (!is.null(error_col_names)) error_col_names, "metric")
+  new_order <- c(setdiff(cols, trailing_cols), intersect(cols, trailing_cols))
   final_results <- final_results[, new_order]
 
   best_index <- rownames(final_results[which(final_results$metric == min(final_results$metric)), ])

@@ -13,7 +13,8 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
 
   # Initialize probabilities for error model
   if (settings$error) {
-    probas_error <- probabilities(list(error = c("constant", "proportional", "combined1", "combined2")))
+    probas_error <- make_error_probas(settings$obs_names)
+    error_cols <- get_error_col_names(settings$obs_names)
   }
 
   # --- Tournament State Variables ---
@@ -90,7 +91,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
       }
 
       if (settings$error) {
-        current_model_df <- cbind(current_model_df, data.frame(error = current_model$error[[1, "error"]]))
+        current_model_df <- cbind(current_model_df, as.data.frame(current_model$error[1, error_cols, drop = FALSE]))
       }
 
       # Generate a unique hash for the current model configuration
@@ -116,7 +117,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
 
       # If model is new, run it
       iiv_params <- if (settings$iiv) as.data.frame(current_model$iiv) else NULL
-      error_model <- if (settings$error) as.data.frame(current_model$error) else NULL
+      error_model <- if (settings$error) as.data.frame(current_model$error[, error_cols, drop = FALSE]) else NULL
 
       runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
 

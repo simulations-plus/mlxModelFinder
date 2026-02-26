@@ -18,7 +18,8 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   struct_cols <- colnames(probas_struct$filters)
   probas_iiv <- if (settings$iiv) iiv_probabilities(library, filters, requiredFilters, favor_true = settings$iiv_favor_true, param_mapping = param_mapping, fixed_iiv = settings$fixed_iiv) else NULL
   iiv_cols <- if (settings$iiv && !is.null(probas_iiv)) colnames(probas_iiv$filters) else NULL
-  probas_error <- if (settings$error) probabilities(list(error = c("constant", "proportional", "combined1", "combined2"))) else NULL
+  probas_error <- if (settings$error) make_error_probas(settings$obs_names) else NULL
+  error_cols <- if (settings$error) get_error_col_names(settings$obs_names) else NULL
 
   # --- ACO State Variables ---
   iteration <- 0
@@ -134,7 +135,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       models_df <- cbind(models_df, as.data.frame(models$iiv))
 
     if (settings$error)
-      models_df <- cbind(models_df, data.frame(error = models$error[, "error"]))
+      models_df <- cbind(models_df, as.data.frame(models$error[, error_cols, drop = FALSE]))
 
     # --- Evaluate Models (Parallelized) ---
 
@@ -152,7 +153,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       )
 
       iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
-      error_model <- if (settings$error) model_df_row[, "error", drop = FALSE] else NULL
+      error_model <- if (settings$error) model_df_row[, error_cols, drop = FALSE] else NULL
       runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
       metric <- metric_func()
       result <- model_df_row
@@ -374,7 +375,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       )
 
       iiv_params <- iter_results_list[[index_best]][, iiv_cols]
-      error_model <- if (settings$error) iter_results_list[[index_best]][, "error"] else NULL
+      error_model <- if (settings$error) iter_results_list[[index_best]][, error_cols, drop = FALSE] else NULL
 
       if (is.null(settings$previous_runs)) prev_runs_list <- NULL
 

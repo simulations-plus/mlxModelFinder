@@ -27,8 +27,14 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
   all_models <- unique(all_models)
 
+  error_col_names <- if (settings$error) get_error_col_names(settings$obs_names) else NULL
+
   if (settings$error) {
-    errors <- data.frame(error = c("constant", "proportional", "combined1", "combined2"))
+    error_list <- setNames(
+      rep(list(c("constant", "proportional", "combined1", "combined2")), length(settings$obs_names)),
+      error_col_names
+    )
+    errors <- expand.grid(error_list, stringsAsFactors = FALSE)
     all_models <- merge(all_models, errors)
   }
 
@@ -76,7 +82,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     # This is the stateful part that must be run sequentially
     lixoftConnectors::setStructuralModel(model_name)
 
-    error_model <- if (settings$error) model_row[, "error", drop = FALSE] else NULL
+    error_model <- if (settings$error) model_row[, error_col_names, drop = FALSE] else NULL
 
     # Get IIV combinations
     if (settings$iiv) {
@@ -262,7 +268,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
       custom_func = model_creation_func  # Pass through custom function
     )
 
-    best_error_model <- if (settings$error) best_model_df[, "error", drop = FALSE] else NULL
+    best_error_model <- if (settings$error) best_model_df[, error_col_names, drop = FALSE] else NULL
 
     if (settings$iiv) {
       iiv_cols_in_result <- intersect(param_list, names(best_model_df))

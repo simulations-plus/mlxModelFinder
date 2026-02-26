@@ -91,7 +91,7 @@ test_that("ACO works with custom models and error models", {
   expect_type(result, "list")
   expect_true("results" %in% names(result))
   expect_s3_class(result$results, "data.frame")
-  expect_true("error" %in% names(result$results))
+  expect_true(any(grepl("^error_", names(result$results))))
 })
 
 test_that("ACO with custom models and both IIV and error", {
@@ -124,7 +124,7 @@ test_that("ACO with custom models and both IIV and error", {
   expect_s3_class(result$results, "data.frame")
   
   # Should have both IIV params and error column
-  expect_true("error" %in% names(result$results))
+  expect_true(any(grepl("^error_", names(result$results))))
   param_cols <- intersect(c("V", "Cl", "ka"), names(result$results))
   expect_true(length(param_cols) > 0)
 })
