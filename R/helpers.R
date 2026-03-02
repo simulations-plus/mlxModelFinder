@@ -160,15 +160,25 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   }
 
   if (!is.null(error)) {
-    obs_names <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)
-    error_col_names <- get_error_col_names(obs_names)
+    monolix_obs_names <- names(lixoftConnectors::getContinuousObservationModel()$errorModel)
+    error_col_names <- get_error_col_names(monolix_obs_names)
     error_list <- list()
-    for (i in seq_along(obs_names)) {
+
+    # Try name-based matching (works when obs_names match column names)
+    for (i in seq_along(monolix_obs_names)) {
       col <- error_col_names[i]
       if (col %in% names(error)) {
-        error_list[[obs_names[i]]] <- as.character(error[[col]])
+        error_list[[monolix_obs_names[i]]] <- as.character(error[[col]])
       }
     }
+
+    # Positional fallback: obs_mapping obsId may differ from Monolix obs names
+    if (length(error_list) == 0 && ncol(error) == length(monolix_obs_names)) {
+      for (i in seq_along(monolix_obs_names)) {
+        error_list[[monolix_obs_names[i]]] <- as.character(error[[i]])
+      }
+    }
+
     if (length(error_list) > 0) lixoftConnectors::setErrorModel(error_list)
   }
 
