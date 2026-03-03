@@ -411,8 +411,10 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
 
     if (!is.null(settings$output)) {
       full_results_df <- do.call(rbind, list_of_runs)
-      prev_runs <- do.call(rbind, prev_runs_list)
-      full_results_df <- rbind(full_results_df, prev_runs)
+      if (!is.null(prev_runs_list)) {
+        prev_runs <- do.call(rbind, prev_runs_list)
+        full_results_df <- rbind(full_results_df, prev_runs)
+      }
       rownames(full_results_df) <- NULL
       tryCatch({
         write.csv(full_results_df, file = settings$output, row.names = FALSE)
