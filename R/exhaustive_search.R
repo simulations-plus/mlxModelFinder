@@ -63,7 +63,7 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
   for (i in seq_len(nrow(all_models))) {
 
     model_row <- all_models[i, , drop = FALSE]
-    struct_cols <- setdiff(names(model_row), "error")
+    struct_cols <- names(filters)
 
     # Use custom or standard getModelName
     # For custom libraries, requiredFilters might be NULL
@@ -72,66 +72,37 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
     } else {
       model_filters <- append(model_row[, struct_cols], requiredFilters)
     }
-    
+
     model_name <- getModelName(
-      library, 
+      library,
       filters = model_filters,
       custom_func = model_creation_func  # Pass through custom function
     )
 
-    # This is the stateful part that must be run sequentially
-    lixoftConnectors::setStructuralModel(model_name)
-
     error_model <- if (settings$error) model_row[, error_col_names, drop = FALSE] else NULL
+
+    # Determine IIV parameters from filter structure (not Monolix state,
+    # since setStructuralModel alone doesn't update getIndividualParameterModel)
+    if (library == "custom" && !is.null(param_mapping)) {
+      model_params <- getParamListFromMapping(model_filters, param_mapping)
+    } else {
+      model_params <- get_pk_parameters(model_filters, requiredFilters)
+    }
 
     # Get IIV combinations
     if (settings$iiv) {
-      # For custom models with param_mapping, determine which params are in this model
-      if (library == "custom" && !is.null(param_mapping)) {
-        # Get parameters for this specific filter combination
-        model_params <- getParamListFromMapping(
-          model_filters,
-          param_mapping
-        )
-
-        # Get actual parameters from Monolix
-        available_params <- lixoftConnectors::getIndividualParameterModel()$name
-
-        # Intersect to get valid IIV parameters for this model
-        valid_iiv_params <- intersect(model_params, available_params)
-
-        if (length(valid_iiv_params) > 0) {
-          variability_df <- as.data.frame(as.list(
-            lixoftConnectors::getIndividualParameterModel()$variability$id
-          ))
-
-          # Only select columns that actually exist in the data frame
-          existing_cols <- intersect(valid_iiv_params, names(variability_df))
-
-          if (length(existing_cols) > 0) {
-            default_iiv <- variability_df[, existing_cols, drop = FALSE]
-            iiv_combos <- apply_fixed_iiv(default_iiv, settings$fixed_iiv)
-          } else {
-            iiv_combos <- data.frame(row.names = 1)
-          }
-        } else {
-          iiv_combos <- data.frame(row.names = 1)
-        }
+      if (length(model_params) > 0) {
+        default_iiv <- as.data.frame(as.list(setNames(rep(TRUE, length(model_params)), model_params)))
+        iiv_combos <- apply_fixed_iiv(default_iiv, settings$fixed_iiv)
       } else {
-        # Standard PK logic (existing code)
-        default_iiv <- as.data.frame(as.list(
-          lixoftConnectors::getIndividualParameterModel()$variability$id
-        ))
-        if (ncol(default_iiv) > 0) {
-          iiv_combos <- apply_fixed_iiv(default_iiv, settings$fixed_iiv)
-        } else {
-          iiv_combos <- data.frame(row.names = 1)
-        }
+        iiv_combos <- data.frame(row.names = 1)
       }
     } else {
-      iiv_combos <- as.data.frame(as.list(
-        lixoftConnectors::getIndividualParameterModel()$variability$id
-      ))
+      if (length(model_params) > 0) {
+        iiv_combos <- as.data.frame(as.list(setNames(rep(TRUE, length(model_params)), model_params)))
+      } else {
+        iiv_combos <- data.frame(row.names = 1)
+      }
       # Apply fixed_iiv even when not searching IIV
       if (!is.null(settings$fixed_iiv)) {
         for (p in names(settings$fixed_iiv)) {
