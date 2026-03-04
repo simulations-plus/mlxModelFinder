@@ -143,6 +143,13 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
     # (This is safe to define outside the loop as it doesn't modify state)
     run_single_model_parallel <- function(model_df_row, project) {
       lixoftConnectors::initializeLixoftConnectors()
+
+      op = options()
+      op$lixoft_notificationOptions$warnings = 1
+      op$lixoft_notificationOptions$info = 1
+      op$lixoft_notificationOptions$errors = 1
+      options(op)
+
       lixoftConnectors::loadProject(project)
       model_struct <- model_df_row[, struct_cols, drop = FALSE]
 
