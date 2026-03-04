@@ -150,13 +150,13 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
   run_exhaustive_worker <- function(job, project) {
 
-    lixoftConnectors::initializeLixoftConnectors()
-
     op = options()
     op$lixoft_notificationOptions$warnings = 1
     op$lixoft_notificationOptions$info = 1
     op$lixoft_notificationOptions$errors = 1
     options(op)
+
+    lixoftConnectors::initializeLixoftConnectors()
 
     lixoftConnectors::loadProject(project)
 
