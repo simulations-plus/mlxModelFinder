@@ -204,11 +204,7 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
     message = function(m) {
       if (grepl(abort_msg, conditionMessage(m), fixed = TRUE)) {
         lixoftConnectors:::.processRequest("monolix", "abort", list(), "asynchronous")
-        scenario$tasks <- c(populationParameterEstimation = TRUE,
-                            conditionalDistributionSampling = !linearization,
-                            conditionalModeEstimation = linearization,
-                            standardErrorEstimation = FALSE,
-                            logLikelihoodEstimation = TRUE)
+        scenario$tasks[["standardErrorEstimation"]] <- FALSE
         lixoftConnectors::setScenario(scenario)
         lixoftConnectors::runScenario()
         invokeRestart("muffleMessage")

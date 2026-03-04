@@ -72,6 +72,14 @@
 #'     \item \strong{xgboost}: Logical; enable XGBoost-based guidance for ACO. Default: `TRUE`.
 #'     \item \strong{xgboost_model_nb}: Integer; number of boosting models to maintain if \code{xgboost = TRUE}. Default: `5`.
 #'     \item \strong{table_func}: function that allows you to output additional information about each run. See online doc for more information.
+#'     \item \strong{tasks}: Named logical vector specifying which Monolix scenario tasks to run.
+#'           When `NULL` (default), uses: `populationParameterEstimation = TRUE`,
+#'           `conditionalDistributionSampling = !linearization`,
+#'           `conditionalModeEstimation = linearization`,
+#'           `standardErrorEstimation = TRUE`, `logLikelihoodEstimation = TRUE`.
+#'           Example: \code{tasks = c(populationParameterEstimation = TRUE,
+#'           conditionalDistributionSampling = TRUE, conditionalModeEstimation = FALSE,
+#'           standardErrorEstimation = FALSE, logLikelihoodEstimation = TRUE)}.
 #'   }
 #' @param metric_func (optional) **Zero-argument** function that returns a single numeric
 #'   score for the **last run model** (lower is better). Use `lixoftConnectors` inside
