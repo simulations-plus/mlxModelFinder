@@ -171,7 +171,8 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
                linearization = settings$linearization,
                initial_func = initial_func,
                param_distributions = settings$param_distributions,
-               obs_mapping = settings$obs_mapping)
+               obs_mapping = settings$obs_mapping,
+               tasks = settings$tasks)
 
       metric <- metric_func()
 
@@ -278,7 +279,8 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
              linearization = settings$linearization,
              initial_func = initial_func,
              param_distributions = settings$param_distributions,
-             obs_mapping = settings$obs_mapping)
+             obs_mapping = settings$obs_mapping,
+             tasks = settings$tasks)
 
     # And save it
     lixoftConnectors::saveProject(

@@ -163,7 +163,7 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
 
         iiv_params <- if (settings$iiv) model_df_row[, iiv_cols, drop = FALSE] else NULL
         error_model <- if (settings$error) model_df_row[, error_cols, drop = FALSE] else NULL
-        runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
+        runModel(model_name, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping, tasks = settings$tasks)
         metric <- metric_func()
         result <- model_df_row
         result$metric <- metric

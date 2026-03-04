@@ -119,7 +119,7 @@ runTournament <- function(library, filters, requiredFilters, settings, metric_fu
       iiv_params <- if (settings$iiv) as.data.frame(current_model$iiv) else NULL
       error_model <- if (settings$error) as.data.frame(current_model$error[, error_cols, drop = FALSE]) else NULL
 
-      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
+      runModel(model, iiv = iiv_params, error = error_model, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, initial_func = initial_func, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping, tasks = settings$tasks)
 
       models_tested <- models_tested + 1
 

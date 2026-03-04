@@ -50,7 +50,7 @@ runLocalSearch <- function(model, model_info, list_of_runs,
       }
 
       # If model is new, run it
-      runModel(model, iiv = new_params, error = error, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping)
+      runModel(model, iiv = new_params, error = error, obsIDToUse = settings$obsIDToUse, linearization = settings$linearization, param_distributions = settings$param_distributions, obs_mapping = settings$obs_mapping, tasks = settings$tasks)
 
       models_tested <- models_tested + 1
 

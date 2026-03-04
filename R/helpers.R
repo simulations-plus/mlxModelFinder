@@ -99,7 +99,8 @@ calculateMetricBICc <- function() {
 
 runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
                      obsIDToUse = NULL, linearization = FALSE,
-                     param_distributions = NULL, obs_mapping = NULL) {
+                     param_distributions = NULL, obs_mapping = NULL,
+                     tasks = NULL) {
 
   error_model <- lixoftConnectors::getContinuousObservationModel()$errorModel
   lixoftConnectors::setStructuralModel(model)
@@ -183,11 +184,15 @@ runModel <- function(model, iiv = NULL, error = NULL, initial_func = NULL,
   }
 
   scenario <- lixoftConnectors::getScenario()
-  scenario$tasks <- c(populationParameterEstimation = TRUE,
-                      conditionalDistributionSampling = !linearization,
-                      conditionalModeEstimation = linearization,
-                      standardErrorEstimation = TRUE,
-                      logLikelihoodEstimation = TRUE)
+  if (!is.null(tasks)) {
+    scenario$tasks <- tasks
+  } else {
+    scenario$tasks <- c(populationParameterEstimation = TRUE,
+                        conditionalDistributionSampling = !linearization,
+                        conditionalModeEstimation = linearization,
+                        standardErrorEstimation = TRUE,
+                        logLikelihoodEstimation = TRUE)
+  }
   scenario$linearization <- linearization
   lixoftConnectors::setScenario(scenario)
 
