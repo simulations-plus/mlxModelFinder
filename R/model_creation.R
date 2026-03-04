@@ -103,6 +103,11 @@ getModelName <- function(library, filters = list(), custom_func = NULL) {
            call. = FALSE)
     }
 
+    # Library references (lib:...) are handled directly by Monolix
+    if (startsWith(model_path, "lib:")) {
+      return(model_path)
+    }
+
     # Validate that the file exists
     if (!file.exists(model_path)) {
       stop(sprintf("Error: custom model_creation_func returned non-existent path: %s", model_path),
