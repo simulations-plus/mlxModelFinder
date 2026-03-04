@@ -261,8 +261,8 @@ validate_initial_func_one_arg <- function(func) {
 }
 
 validate_obsidtouse <- function(settings, library = "pk", obs_mapping = NULL) {
-  # Custom models with obs_mapping don't need obsIDToUse
-  if (library == "custom" && !is.null(obs_mapping)) return(TRUE)
+  # Custom models don't need obsIDToUse
+  if (library == "custom") return(TRUE)
 
   obs_ids <- lixoftConnectors::getData()$observationNames
   if (length(obs_ids) > 1) {
