@@ -100,7 +100,7 @@ validate_settings <- function(settings, algorithm = NULL) {
     "N","iiv","error","seed","previous_runs","output","convergence_threshold",
     "initial_iiv_forced_iter","rho","obsIDToUse","plot","linearization","save_mode",
     "clip","keys","elitism","max_models","iiv_favor_true","xgboost","xgboost_model_nb",
-    "local_search", "table_func"
+    "local_search", "table_func", "tasks"
   )
 
   unknown <- setdiff(names(settings), allowed)
