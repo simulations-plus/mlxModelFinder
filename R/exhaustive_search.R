@@ -160,37 +160,42 @@ runExhaustiveSearch <- function(library, filters, requiredFilters, settings, met
 
     lixoftConnectors::loadProject(project)
 
-    # Run the model (this is the time-consuming part)
-    runModel(job$model_name,
-             iiv = job$iiv_model,
-             error = job$error_model,
-             obsIDToUse = settings$obsIDToUse,
-             linearization = settings$linearization,
-             initial_func = initial_func,
-             param_distributions = settings$param_distributions,
-             obs_mapping = settings$obs_mapping)
-
-    metric <- metric_func()
-
-    # Save project if save_mode == "all"
-    if (identical(settings$save_mode, "all")) {
-      lixoftConnectors::saveProject(
-        file.path(settings$result_folder, "autoBuild",
-                  paste0("run_", job$job_index, ".mlxtran"))
-      )
-    }
-
-    # Populate the result row
     model_info <- job$model_info_base
-    model_info$metric <- metric
 
-    if (!is.null(settings$table_func)) {
-      result_row <- cbind(model_info, settings$table_func())
-    } else {
-      result_row <- model_info
-    }
+    tryCatch({
+      # Run the model (this is the time-consuming part)
+      runModel(job$model_name,
+               iiv = job$iiv_model,
+               error = job$error_model,
+               obsIDToUse = settings$obsIDToUse,
+               linearization = settings$linearization,
+               initial_func = initial_func,
+               param_distributions = settings$param_distributions,
+               obs_mapping = settings$obs_mapping)
 
-    return(result_row)
+      metric <- metric_func()
+
+      # Save project if save_mode == "all"
+      if (identical(settings$save_mode, "all")) {
+        lixoftConnectors::saveProject(
+          file.path(settings$result_folder, "autoBuild",
+                    paste0("run_", job$job_index, ".mlxtran"))
+        )
+      }
+
+      model_info$metric <- metric
+
+      if (!is.null(settings$table_func)) {
+        result_row <- cbind(model_info, settings$table_func())
+      } else {
+        result_row <- model_info
+      }
+
+      return(result_row)
+    }, error = function(e) {
+      model_info$metric <- Inf
+      return(model_info)
+    })
   }
 
   # --- Run all jobs in parallel ---
