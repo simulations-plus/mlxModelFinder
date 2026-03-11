@@ -237,9 +237,11 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
       for (model_hash in names(parallel_results)) {
         parallel_run <- parallel_results[[model_hash]]
         result <- parallel_run$result
-        improved <- parallel_run$improved
 
         models_tested <- models_tested + 1
+
+        # Recompute improved against the current best (worker flag is stale)
+        improved <- result$metric < best_metric
 
         if (improved) {
           best_metric <- result$metric
@@ -505,14 +507,44 @@ runACO <- function(library, filters, requiredFilters, settings, metric_func, ini
   iteration_progress$rank <- NULL
   iteration_progress <- iteration_progress[, colSums(!is.na(iteration_progress)) > 0]
 
-  best_index <- rownames(res[which(res$metric == min(res$metric)), ])
+  # --- Re-run and save the best model ---
+  best_model_df <- res[1, , drop = FALSE]
+  best_model_path <- NULL
 
-  best_model_path <- if (settings$save_mode == "best")
-    file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
-  else if (settings$save_mode == "all")
-    file.path(settings$result_folder, "autoBuild", paste0("run_", best_index, ".mlxtran"))
-  else
-    NULL
+  if (settings$save_mode %in% c("best", "all") && nrow(best_model_df) > 0) {
+    cli::cli_alert_info("Re-running best model to save project file...")
+
+    best_struct_info <- best_model_df[, struct_cols, drop = FALSE]
+    best_model_name <- getModelName(
+      library,
+      filters = append(as.list(best_struct_info), requiredFilters),
+      custom_func = model_creation_func
+    )
+
+    best_error_model <- if (settings$error) best_model_df[, error_cols, drop = FALSE] else NULL
+
+    if (settings$iiv) {
+      iiv_cols_in_result <- intersect(iiv_cols, names(best_model_df))
+      best_iiv_model <- best_model_df[, iiv_cols_in_result, drop = FALSE]
+      best_iiv_model <- best_iiv_model[, colSums(!is.na(best_iiv_model)) > 0, drop = FALSE]
+    } else {
+      best_iiv_model <- NULL
+    }
+
+    runModel(best_model_name,
+             iiv = best_iiv_model,
+             error = best_error_model,
+             obsIDToUse = settings$obsIDToUse,
+             linearization = settings$linearization,
+             initial_func = initial_func,
+             param_distributions = settings$param_distributions,
+             obs_mapping = settings$obs_mapping,
+             tasks = settings$tasks)
+
+    best_model_path <- file.path(settings$result_folder, "autoBuild", "best_run.mlxtran")
+    lixoftConnectors::saveProject(best_model_path)
+    cli::cli_alert_success("Best model project file saved.")
+  }
 
   return(list(
     results = res,
